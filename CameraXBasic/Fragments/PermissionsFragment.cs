@@ -11,6 +11,7 @@ using AndroidX.Navigation;
 namespace CameraXBasic.Fragments
 {
     // The sole purpose of this fragment is to request permissions and, once granted, display the camera fragment to the user.
+    [Android.App.Activity(Name = "com.android.example.cameraxbasic.fragments.PermissionsFragment")]
     public class PermissionsFragment : Fragment
     {
         private const int PermissionsRequestCode = 10;
@@ -28,7 +29,7 @@ namespace CameraXBasic.Fragments
             else
             {
                 // If permissions have already been granted, proceed
-                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(PermissionsFragmentDirections.ActionPermissionsToCamera());
+                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(Resource.Id.action_permissions_to_camera);
             }
         }
 
@@ -42,7 +43,7 @@ namespace CameraXBasic.Fragments
                 {
                     // Take the user to the success fragment when permission is granted
                     Toast.MakeText(this.Context, "Permission request granted", ToastLength.Long).Show();
-                    Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(PermissionsFragmentDirections.ActionPermissionsToCamera());
+                    Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(Resource.Id.action_permissions_to_camera);
                 }
                 else
                 {
@@ -51,6 +52,7 @@ namespace CameraXBasic.Fragments
             }
         }
 
+        // Convenience method used to check if all permissions required by this app are granted
         public static bool HasPermissions(Context context)
         {
             return PermissionsRequired.All(x => ContextCompat.CheckSelfPermission(context, x) == Permission.Granted);

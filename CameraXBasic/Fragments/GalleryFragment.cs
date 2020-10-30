@@ -14,24 +14,32 @@ using AndroidX.Core.Content;
 using AndroidX.Fragment.App;
 using AndroidX.Navigation;
 using AndroidX.ViewPager.Widget;
-using Bumptech.Glide;
 using CameraXBasic.Utils;
 
 namespace CameraXBasic.Fragments
 {
     // Fragment used to present the user with a gallery of photos taken
+    [Android.App.Activity(Name = "com.android.example.cameraxbasic.fragments.GalleryFragment")]
     public class GalleryFragment : Fragment
     {
-        private static readonly HashSet<string> ExtensionWhitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "jpg", "jpeg" };
-
-        // AndroidX navigation arguments
-        //private AndroidX.Navigation.Fragment.n args;
+        public static readonly HashSet<string> ExtensionWhitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg" };
 
         private List<Java.IO.File> mediaList;
 
-        protected GalleryFragment()
-            : base()
+        // Adapter class used to present a fragment containing one photo or video as a page
+        private class MediaPagerAdapter : FragmentStatePagerAdapter
         {
+            private readonly GalleryFragment parent;
+
+            public MediaPagerAdapter(GalleryFragment f, FragmentManager fm)
+                : base(fm, BehaviorResumeOnlyCurrentFragment)
+            {
+                parent = f;
+            }
+
+            public override int Count => parent.mediaList.Count;
+            public override Fragment GetItem(int position) => PhotoFragment.Create(parent.mediaList[position]);
+            public override int GetItemPosition(Java.Lang.Object _) => PositionNone;
         }
 
         public override void OnCreate(Bundle savedInstanceState)
@@ -42,11 +50,13 @@ namespace CameraXBasic.Fragments
             RetainInstance = true;
 
             // Get root directory of media from navigation arguments
-            var rootDirectory = new Java.IO.File(string.Empty); // TODO: Get from args
+            var rootDirectory = new Java.IO.File(Arguments?.GetString("root_directory"));
 
             // Walk through all files in the root directory
             // We reverse the order of the list to present the last photos first
-            mediaList = rootDirectory.ListFiles().Where(x => ExtensionWhitelist.Contains(Path.GetExtension(x.Name))).OrderByDescending(x => x.Name).ToList();
+            mediaList = rootDirectory.ListFiles().Where(x =>
+                ExtensionWhitelist.Contains(Path.GetExtension(x.Name).ToLower())).
+                OrderByDescending(x => x.Name).ToList();
         }
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -90,9 +100,9 @@ namespace CameraXBasic.Fragments
                 // Create a sharing intent
                 var intent = new Intent();
                 // Infer media type from file extension
-                string mediaType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(System.IO.Path.GetExtension(mediaFile.Path));
+                string mediaType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(MimeTypeMap.GetFileExtensionFromUrl(mediaFile.Path));
                 // Get URI from our FileProvider implementation
-                Android.Net.Uri uri = FileProvider.GetUriForFile(view.Context, BuildConfig.ApplicationId + ".provider", mediaFile);
+                Android.Net.Uri uri = FileProvider.GetUriForFile(view.Context, Context.PackageName + ".provider", mediaFile);
                 // Set the appropriate intent extra, type, action and flags
                 intent.PutExtra(Intent.ExtraStream, uri);
                 intent.SetType(mediaType);
@@ -129,26 +139,9 @@ namespace CameraXBasic.Fragments
                         Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).NavigateUp();
                     }
                 })
-                                        .SetNegativeButton(Android.Resource.String.No, handler: null)
-                        .Create()
-                .ShowImmersive();
+                .SetNegativeButton(Android.Resource.String.No, handler: null)
+                .Create().ShowImmersive();
             };
-        }
-
-        // Adapter class used to present a fragment containing one photo or video as a page
-        private class MediaPagerAdapter : FragmentStatePagerAdapter
-        {
-            private readonly GalleryFragment parent;
-
-            public MediaPagerAdapter(GalleryFragment f, FragmentManager fm)
-                : base(fm, BehaviorResumeOnlyCurrentFragment)
-            {
-                parent = f;
-            }
-
-            public override int Count => parent.mediaList.Count;
-            public override Fragment GetItem(int position) => PhotoFragment.Create(parent.mediaList[position]);
-            public override int GetItemPosition(Java.Lang.Object _) => PositionNone;
         }
     }
 }
