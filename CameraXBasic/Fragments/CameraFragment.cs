@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Android.Content;
@@ -24,6 +24,9 @@ using AndroidX.Navigation;
 using Bumptech.Glide;
 using Bumptech.Glide.Request;
 using CameraXBasic.Utils;
+
+// Helper type alias used for analysis use case callbacks
+delegate void LumaListener(double luma);
 
 namespace CameraXBasic.Fragments
 {
@@ -72,7 +75,7 @@ namespace CameraXBasic.Fragments
             public override void OnReceive(Context context, Intent intent)
             {
                 // When the volume down button is pressed, simulate a shutter button click
-                if (intent.GetIntExtra(MainActivity.KeyEventExtra, (int)Keycode.Unknown) == (int)Keycode.VolumeDown)
+                if (intent.GetIntExtra(MainActivity.KeyEventExtra, (int) Keycode.Unknown) == (int) Keycode.VolumeDown)
                 {
                     var shutter = parent.container.FindViewById<ImageButton>(Resource.Id.camera_capture_button);
                     shutter.SimulateClick();
@@ -91,9 +94,9 @@ namespace CameraXBasic.Fragments
         {
             if (id == displayId)
             {
-                Log.Debug(Tag, $"Rotation changed: {View.Display.Rotation}");
-                imageCapture.TargetRotation = (int)View.Display.Rotation;
-                imageAnalyzer.TargetRotation = (int)View.Display.Rotation;
+                Log.Debug(Tag, "Rotation changed: " + View.Display.Rotation);
+                imageCapture.TargetRotation = (int) View.Display.Rotation;
+                imageAnalyzer.TargetRotation = (int) View.Display.Rotation;
             }
         }
 
@@ -237,10 +240,10 @@ namespace CameraXBasic.Fragments
             // Get screen metrics used to setup camera for full screen resolution
             var metrics = new DisplayMetrics();
             viewFinder.Display.GetRealMetrics(metrics);
-            Log.Debug(Tag, "Screen metrics: ${metrics.widthPixels} x ${metrics.heightPixels}");
+            Log.Debug(Tag, "Screen metrics: " + metrics);
 
             var screenAspectRatio = AspectRatio(metrics.WidthPixels, metrics.HeightPixels);
-            Log.Debug(Tag, "Preview aspect ratio: $screenAspectRatio");
+            Log.Debug(Tag, "Preview aspect ratio: " + screenAspectRatio);
 
             var rotation = viewFinder.Display.Rotation;
 
@@ -276,10 +279,18 @@ namespace CameraXBasic.Fragments
                 .SetTargetAspectRatio(screenAspectRatio)
                 // Set initial target rotation, we will have to call this again if rotation changes
                 // during the lifecycle of this use case
-                .SetTargetRotation((int)rotation)
+                .SetTargetRotation((int) rotation)
                 .Build();
 
-            // TODO: The analyzer can then be assigned to the instance
+            // The analyzer can then be assigned to the instance
+            imageAnalyzer.SetAnalyzer(cameraExecutor, new LuminosityAnalyzer(
+                (double luma) => {
+                    // Values returned from our analyzer are passed to the attached listener
+                    // We log image analysis results here - you should do something useful
+                    // instead!
+                    Log.Debug(Tag, "Average luminosity: " + luma);
+                })
+            );
 
             // Must unbind the use-cases before rebinding them
             cameraProvider.UnbindAll();
@@ -296,7 +307,7 @@ namespace CameraXBasic.Fragments
             }
             catch (Java.Lang.Exception exc)
             {
-                Log.Error(Tag, "Use case binding failed", exc);
+                Log.Error(Tag, "Use case binding failed: " + exc);
             }
         }
 
@@ -421,14 +432,14 @@ namespace CameraXBasic.Fragments
 
         public void OnError(ImageCaptureException exc)
         {
-            Log.Error(Tag, "Photo capture failed: ${exc.message}", exc);
+            Log.Error(Tag, "Photo capture failed: " + exc);
         }
 
         public void OnImageSaved(ImageCapture.OutputFileResults output)
         {
             var savedUri = output.SavedUri != null ? output.SavedUri :
                 Uri.FromFile(photoFile);
-            Log.Debug(Tag, "Photo capture succeeded: $savedUri");
+            Log.Debug(Tag, "Photo capture succeeded: " + savedUri);
 
             // We can only change the foreground Drawable using API level 23+ API
             if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
@@ -460,7 +471,7 @@ namespace CameraXBasic.Fragments
 
         public void OnScanCompleted(string Path, Uri uri)
         {
-            Log.Debug(Tag, "Image capture scanned into media store: $uri");
+            Log.Debug(Tag, "Image capture scanned into media store: " + uri);
         }
 
         // Enabled or disabled a button to switch cameras depending on the available cameras
@@ -489,6 +500,101 @@ namespace CameraXBasic.Fragments
         {
             return cameraProvider == null ? false :
                 cameraProvider.HasCamera(CameraSelector.DefaultFrontCamera);
+        }
+
+        // Our custom image analysis class.
+        //
+        // <p>All we need to do is override the function `analyze` with our desired operations. Here,
+        // we compute the average luminosity of the image by looking at the Y plane of the YUV frame.
+        //
+        private class LuminosityAnalyzer : Java.Lang.Object, ImageAnalysis.IAnalyzer
+        {
+            private int frameRateWindow = 8;
+            private Queue<long> frameTimestamps = new Queue<long>(5);
+            private LumaListener[] listeners;
+            private long lastAnalyzedTimestamp = 0L;
+            private double framesPerSecond = -1.0;
+
+            public LuminosityAnalyzer(LumaListener listener)
+                : base()
+            {
+                listeners = new LumaListener[] { listener };
+            }
+
+            // Used to add listeners that will be called with each luma computed
+            void OnFrameAnalyzed(LumaListener listener)
+            {
+                listeners.Append(listener);
+            }
+
+            // Helper extension function used to extract a byte array from an image plane buffer
+            byte[] ToByteArray(Java.Nio.ByteBuffer byteBuffer)
+            {
+                byteBuffer.Rewind();    // Rewind the buffer to zero
+                var data = new byte[byteBuffer.Remaining()];
+                byteBuffer.Get(data);   // Copy the buffer into a byte array
+                return data;            // Return the byte array
+            }
+
+            // Analyzes an image to produce a result.
+            //
+            // <p>The caller is responsible for ensuring this analysis method can be executed quickly
+            // enough to prevent stalls in the image acquisition pipeline. Otherwise, newly available
+            // images will not be acquired and analyzed.
+            //
+            // <p>The image passed to this method becomes invalid after this method returns. The caller
+            // should not store external references to this image, as these references will become
+            // invalid.
+            //
+            // @param image image being analyzed VERY IMPORTANT: Analyzer method implementation must
+            // call image.close() on received images when finished using them. Otherwise, new images
+            // may not be received or the camera may stall, depending on back pressure setting.
+            //
+            public void Analyze(IImageProxy image)
+            {
+                // If there are no listeners attached, we don't need to perform analysis
+                if (listeners.Length == 0)
+                {
+                    image.Close();
+                    return;
+                }
+
+                // Keep track of frames analyzed
+                var currentTime = Java.Lang.JavaSystem.CurrentTimeMillis();
+                frameTimestamps.Enqueue(currentTime);
+
+                // Compute the FPS using a moving average
+                while (frameTimestamps.Count > frameRateWindow) frameTimestamps.Dequeue();
+                var timestampFirst = frameTimestamps.First();
+                var timestampLast = frameTimestamps.Last();
+                framesPerSecond = 1.0 / ((timestampLast - timestampFirst) /
+                    System.Math.Max(1, frameTimestamps.Count)) * 1000.0;
+
+                // Analysis could take an arbitrarily long amount of time
+                // Since we are running in a different thread, it won't stall other use cases
+
+                lastAnalyzedTimestamp = frameTimestamps.Last();
+
+                // Since format in ImageAnalysis is YUV, image.planes[0] contains the luminance plane
+                var buffer = image.GetPlanes()[0].Buffer;
+
+                // Extract image data from callback object
+                var data = ToByteArray(buffer);
+
+                // Convert the data into an array of pixel values ranging 0-255
+                var pixels = data.Select(x => (int) x & 0xFF).ToArray();
+
+                // Compute average luminance for the image
+                var luma = pixels.Average();
+
+                // Call all listeners with new value
+                foreach (LumaListener item in listeners)
+                {
+                    item(luma);
+                }
+
+                image.Close();
+            }
         }
 
         private const string Tag = "CameraXBasic";
