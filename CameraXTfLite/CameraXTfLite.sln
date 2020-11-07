@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraXTfLite", "CameraXTfLite.csproj", "{B52DA3C7-3B4D-4FDB-BEA6-3239CF21EC65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Camera.Utils", "Camera.Utils\Camera.Utils.csproj", "{320822AF-9F5C-484C-A07D-9F2C3E9D7034}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B52DA3C7-3B4D-4FDB-BEA6-3239CF21EC65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B52DA3C7-3B4D-4FDB-BEA6-3239CF21EC65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B52DA3C7-3B4D-4FDB-BEA6-3239CF21EC65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B52DA3C7-3B4D-4FDB-BEA6-3239CF21EC65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{320822AF-9F5C-484C-A07D-9F2C3E9D7034}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{320822AF-9F5C-484C-A07D-9F2C3E9D7034}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{320822AF-9F5C-484C-A07D-9F2C3E9D7034}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{320822AF-9F5C-484C-A07D-9F2C3E9D7034}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
