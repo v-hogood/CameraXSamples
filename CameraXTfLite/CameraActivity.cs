@@ -246,7 +246,7 @@ namespace CameraXTfLite
             var predictions = detector.Predict(tfImageBuffer);
 
             // Report only the top prediction
-            ReportPrediction(predictions.OrderBy(x => x.Score).Last());
+            ReportPrediction(predictions.OrderBy(p => p.Score).Last());
 
             // Compute the FPS of the entire pipeline
             var frameCount = 10;
