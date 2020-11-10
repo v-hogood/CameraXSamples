@@ -49,6 +49,8 @@ namespace CameraXTfLite
         private Interpreter tflite;
         private ObjectDetectionHelper detector;
         private Size tfInputSize;
+        private int[] argb8888;
+        private byte[] rgb888;
 
         private YuvToRgbConverter converter;
         private int frameCounter;
@@ -93,6 +95,8 @@ namespace CameraXTfLite
             var inputIndex = 0;
             var inputShape = tflite.GetInputTensor(inputIndex).Shape();
             tfInputSize = new Size(inputShape[2], inputShape[1]); // Order of axis is: {1, height, width, 3}
+            argb8888 = new int[tfInputSize.Width * tfInputSize.Height];
+            rgb888 = new byte[tfInputSize.Width * tfInputSize.Height * 3];
 
             tfImageBuffer = Java.Nio.ByteBuffer.AllocateDirect(tfInputSize.Width * tfInputSize.Height * 3);
             tfImageBuffer.Order(Java.Nio.ByteOrder.NativeOrder());
@@ -229,17 +233,15 @@ namespace CameraXTfLite
             // Process the image in Tensorflow
             w = bitmapInput.Width;
             h = bitmapInput.Height;
-            int[] pixels = new int[w * h];
-            bitmapInput.GetPixels(pixels, 0, w, 0, 0, w, h);
-            byte[] bytes = new byte[w * h * 3];
-            for (int j = 0, i = 0; i < pixels.Length; i++)
+            bitmapInput.GetPixels(argb8888, 0, w, 0, 0, w, h);
+            for (int j = 0, i = 0; i <argb8888.Length; i++)
             {
-                bytes[j++] = (byte) (pixels[i] >> 16 & 0xff);
-                bytes[j++] = (byte) (pixels[i] >>  8 & 0xff);
-                bytes[j++] = (byte) (pixels[i]       & 0xff);
+                rgb888[j++] = (byte) (argb8888[i] >> 16 & 0xff);
+                rgb888[j++] = (byte) (argb8888[i] >>  8 & 0xff);
+                rgb888[j++] = (byte) (argb8888[i]       & 0xff);
             }
             tfImageBuffer.Rewind();
-            tfImageBuffer.Put(bytes);
+            tfImageBuffer.Put(rgb888);
             tfImageBuffer.Rewind();
 
             // Perform the object detection for the current frame
