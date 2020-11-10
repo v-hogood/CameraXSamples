@@ -74,6 +74,11 @@ namespace Camera.Utils
             var imageCrop = image.CropRect;
             var imagePlanes = image.GetPlanes();
 
+            bool vuInterleaved =
+                imagePlanes[1].Buffer.IsDirect && imagePlanes[2].Buffer.IsDirect &&
+                imagePlanes[1].Buffer.GetDirectBufferAddress() ==
+                imagePlanes[2].Buffer.GetDirectBufferAddress() + 1;
+
             for (int planeIndex = 0; planeIndex < imagePlanes.Length; planeIndex++)
             {
                 // How many values are read in input for each output value written
@@ -142,6 +147,36 @@ namespace Camera.Utils
 
                 var planeWidth = planeCrop.Width();
                 var planeHeight = planeCrop.Height();
+
+                if (imageCrop.Width() == image.Width &&
+                    pixelStride == outputStride && rowStride == planeWidth * outputStride)
+                {
+                    // When the image is not cropped horizontally,
+                    // and the plane strides match the output strides,
+                    // we can just copy the entire plane in a single step
+
+                    // Move buffer position to the beginning of this plane
+                    planeBuffer.Position(planeCrop.Top * rowStride);
+
+                    if (planeIndex == 0)
+                    {
+                        // Copy the Y plane
+                        planeBuffer.Get(outputBuffer, outputOffset, rowStride * planeHeight);
+                        continue;
+                    }
+                    else if (planeIndex == 1 && vuInterleaved)
+                    {
+                        // If the VU planes are already interleaved we can copy all but the first V
+                        planeBuffer.Get(outputBuffer, outputOffset, rowStride * planeHeight - 1);
+                        continue;
+                    }
+                    else if (planeIndex == 2 && vuInterleaved)
+                    {
+                        // If the VU planes are already interleaved we can copy just the first V
+                        planeBuffer.Get(outputBuffer, outputOffset, 1);
+                        continue;
+                    }
+                }
 
                 // Intermediate buffer used to store the bytes of each row
                 var rowBuffer = new byte[plane.RowStride];
