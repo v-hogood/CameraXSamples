@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Android.Content;
 using Android.Graphics;
 using Android.Media;
@@ -52,7 +53,7 @@ namespace Camera.Utils
             if (inputAllocation == null)
             {
                 // Explicitly create an element with type NV21, since that's the pixel format we use
-                var elemType = new Type.Builder(rs, Element.YUV(rs)).SetYuvFormat((int)ImageFormatType.Nv21).Create();
+                var elemType = new Type.Builder(rs, Element.U8(rs)).SetYuvFormat((int) ImageFormatType.Nv21).Create();
                 inputAllocation = Allocation.CreateSized(rs, elemType.Element, yuvBuffer.Length);
             }
             if (outputAllocation == null)
@@ -74,8 +75,8 @@ namespace Camera.Utils
             var imageCrop = image.CropRect;
             var imagePlanes = image.GetPlanes();
 
-            bool vuInterleaved =
-                imagePlanes[1].Buffer.IsDirect && imagePlanes[2].Buffer.IsDirect &&
+            // Usually the VU planes are already interleaved
+            var vuInterleaved =
                 imagePlanes[1].Buffer.GetDirectBufferAddress() ==
                 imagePlanes[2].Buffer.GetDirectBufferAddress() + 1;
 
@@ -116,6 +117,11 @@ namespace Camera.Utils
                         outputOffset = 0;
                         break;
                     case 1:
+                        if (vuInterleaved)
+                        {
+                            // If VU are already interleaved skip U and do VU as V.
+                            continue;
+                        }
                         outputStride = 2;
                         // For NV21 format, U is in odd-numbered indices
                         outputOffset = pixelCount + 1;
@@ -149,31 +155,20 @@ namespace Camera.Utils
                 var planeHeight = planeCrop.Height();
 
                 if (imageCrop.Width() == image.Width &&
-                    pixelStride == outputStride && rowStride == planeWidth * outputStride)
+                    rowStride == planeWidth * outputStride)
                 {
                     // When the image is not cropped horizontally,
                     // and the plane strides match the output strides,
                     // we can just copy the entire plane in a single step
 
-                    // Move buffer position to the beginning of this plane
-                    planeBuffer.Position(planeCrop.Top * rowStride);
+                    if ((pixelStride == 1 && outputStride == 1) ||
+                        (pixelStride == 2 && outputStride == 2 && vuInterleaved))
+                    {
+                        // Move buffer position to the beginning of this plane
+                        var planePtr = planeBuffer.GetDirectBufferAddress() + planeCrop.Top * rowStride;
 
-                    if (planeIndex == 0)
-                    {
-                        // Copy the Y plane
-                        planeBuffer.Get(outputBuffer, outputOffset, rowStride * planeHeight);
-                        continue;
-                    }
-                    else if (planeIndex == 1 && vuInterleaved)
-                    {
-                        // If the VU planes are already interleaved we can copy all but the first V
-                        planeBuffer.Get(outputBuffer, outputOffset, rowStride * planeHeight - 1);
-                        continue;
-                    }
-                    else if (planeIndex == 2 && vuInterleaved)
-                    {
-                        // If the VU planes are already interleaved we can copy just the first V
-                        planeBuffer.Get(outputBuffer, outputOffset, 1);
+                        // Copy the plane
+                        Marshal.Copy(planePtr, outputBuffer, outputOffset, rowStride * planeHeight);
                         continue;
                     }
                 }
@@ -184,6 +179,8 @@ namespace Camera.Utils
                 // Size of each row in bytes
                 var rowLength = (pixelStride == 1 && outputStride == 1) ?
                     planeWidth :
+                    (pixelStride == 2 && outputStride == 2 && vuInterleaved ?
+                    planeWidth * 2 :
                     // Take into account that the stride may include data from pixels other than this
                     // particular plane and row, and that could be between pixels and not after every
                     // pixel:
@@ -192,25 +189,26 @@ namespace Camera.Utils
                     // | Pixel 1 | Other Data | Pixel 2 | Other Data | ... | Pixel N |
                     //
                     // We need to get (N-1) * (pixel stride bytes) per row + 1 byte for the last pixel
-                    (planeWidth - 1) * pixelStride + 1;
+                    (planeWidth - 1) * pixelStride + 1);
 
                 for (int row = 0; row < planeHeight; row++)
                 {
                     // Move buffer position to the beginning of this row
-                    planeBuffer.Position(
-                        (row + planeCrop.Top) * rowStride + planeCrop.Left * pixelStride);
+                    var rowPtr = planeBuffer.GetDirectBufferAddress() +
+                        (row + planeCrop.Top) * rowStride + planeCrop.Left * pixelStride;
 
-                    if (pixelStride == 1 && outputStride == 1)
+                    if ((pixelStride == 1 && outputStride == 1) ||
+                        (pixelStride == 2 && outputStride == 2 && vuInterleaved))
                     {
                         // When there is a single stride value for pixel and output, we can just copy
                         // the entire row in a single step
-                        planeBuffer.Get(outputBuffer, outputOffset, rowLength);
+                        Marshal.Copy(rowPtr, outputBuffer, outputOffset, rowLength);
                         outputOffset += rowLength;
                     }
                     else
                     {
                         // When either pixel or output have a stride > 1 we must copy pixel by pixel
-                        planeBuffer.Get(rowBuffer, 0, rowLength);
+                        Marshal.Copy(rowPtr, rowBuffer, 0, rowLength);
                         for (int col = 0; col < planeWidth; col++)
                         {
                             outputBuffer[outputOffset] = rowBuffer[col * pixelStride];
