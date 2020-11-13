@@ -514,6 +514,8 @@ namespace CameraXBasic.Fragments
             private LumaListener[] listeners;
             private long lastAnalyzedTimestamp = 0L;
             private double framesPerSecond = -1.0;
+            private byte[] data;
+            private int[] pixels;
 
             public LuminosityAnalyzer(LumaListener listener)
                 : base()
@@ -528,12 +530,15 @@ namespace CameraXBasic.Fragments
             }
 
             // Helper extension function used to extract a byte array from an image plane buffer
-            byte[] ToByteArray(Java.Nio.ByteBuffer byteBuffer)
+            void ToByteArray(Java.Nio.ByteBuffer byteBuffer)
             {
                 byteBuffer.Rewind();    // Rewind the buffer to zero
-                var data = new byte[byteBuffer.Remaining()];
+                if (data == null)
+                {
+                    // The int buffer is initialized only once the analyzer has started running
+                    data = new byte[byteBuffer.Remaining()];
+                }
                 byteBuffer.Get(data);   // Copy the buffer into a byte array
-                return data;            // Return the byte array
             }
 
             // Analyzes an image to produce a result.
@@ -569,6 +574,7 @@ namespace CameraXBasic.Fragments
                 var timestampLast = frameTimestamps.Last();
                 framesPerSecond = 1.0 / ((timestampLast - timestampFirst) /
                     System.Math.Max(1, frameTimestamps.Count)) * 1000.0;
+                Log.Debug(Tag, "Frames per second: " + framesPerSecond);
 
                 // Analysis could take an arbitrarily long amount of time
                 // Since we are running in a different thread, it won't stall other use cases
@@ -579,10 +585,19 @@ namespace CameraXBasic.Fragments
                 var buffer = image.GetPlanes()[0].Buffer;
 
                 // Extract image data from callback object
-                var data = ToByteArray(buffer);
+                ToByteArray(buffer);
 
                 // Convert the data into an array of pixel values ranging 0-255
-                var pixels = data.Select(x => (int) x & 0xFF).ToArray();
+                // pixels = data.Select(x => (int) x & 0xFF).ToArray();
+                if (pixels == null)
+                {
+                    // The int buffer is initialized only once the analyzer has started running
+                    pixels = new int[data.Length];
+                }
+                for (int i = 0; i < data.Length; i++)
+                {
+                    pixels[i] = (int) data[i];
+                }
 
                 // Compute average luminance for the image
                 var luma = pixels.Average();
