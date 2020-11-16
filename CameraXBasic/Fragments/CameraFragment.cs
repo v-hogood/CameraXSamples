@@ -288,7 +288,7 @@ namespace CameraXBasic.Fragments
                     // Values returned from our analyzer are passed to the attached listener
                     // We log image analysis results here - you should do something useful
                     // instead!
-                    Log.Debug(Tag, "Average luminosity: " + luma);
+                    Log.Debug(Tag, "Average luminosity: " + luma.ToString("0.00"));
                 })
             );
 
@@ -509,13 +509,13 @@ namespace CameraXBasic.Fragments
         //
         private class LuminosityAnalyzer : Java.Lang.Object, ImageAnalysis.IAnalyzer
         {
+            private int frameCounter = 0;
             private int frameRateWindow = 8;
             private Queue<long> frameTimestamps = new Queue<long>(5);
             private LumaListener[] listeners;
             private long lastAnalyzedTimestamp = 0L;
             private double framesPerSecond = -1.0;
             private byte[] data;
-            private int[] pixels;
 
             public LuminosityAnalyzer(LumaListener listener)
                 : base()
@@ -573,8 +573,11 @@ namespace CameraXBasic.Fragments
                 var timestampFirst = frameTimestamps.First();
                 var timestampLast = frameTimestamps.Last();
                 framesPerSecond = 1.0 / ((timestampLast - timestampFirst) /
-                    System.Math.Max(1, frameTimestamps.Count)) * 1000.0;
-                Log.Debug(Tag, "Frames per second: " + framesPerSecond);
+                    System.Math.Max(1, frameTimestamps.Count - 1)) * 1000.0;
+                if (++frameCounter % frameRateWindow == 0)
+                {
+                    Log.Debug(Tag, "Frames per second: " + framesPerSecond.ToString("0.00"));
+                }
 
                 // Analysis could take an arbitrarily long amount of time
                 // Since we are running in a different thread, it won't stall other use cases
@@ -587,20 +590,13 @@ namespace CameraXBasic.Fragments
                 // Extract image data from callback object
                 ToByteArray(buffer);
 
-                // Convert the data into an array of pixel values ranging 0-255
-                // pixels = data.Select(x => (int) x & 0xFF).ToArray();
-                if (pixels == null)
-                {
-                    // The int buffer is initialized only once the analyzer has started running
-                    pixels = new int[data.Length];
-                }
+                // Compute average luminance for the image
+                double luma = 0;
                 for (int i = 0; i < data.Length; i++)
                 {
-                    pixels[i] = (int) data[i];
+                    luma += data[i];
                 }
-
-                // Compute average luminance for the image
-                var luma = pixels.Average();
+                luma /= data.Length;
 
                 // Call all listeners with new value
                 foreach (LumaListener item in listeners)
@@ -612,7 +608,7 @@ namespace CameraXBasic.Fragments
             }
         }
 
-        private const string Tag = "CameraXBasic";
+        private new const string Tag = "CameraXBasic";
         private const string Filename = "yyyy-MM-dd-HH-mm-ss-SSS";
         private const string PhotoExtension = ".jpg";
         private const double Ratio4To3Value = 4.0 / 3.0;
