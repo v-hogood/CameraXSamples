@@ -219,15 +219,14 @@ namespace CameraXTfLite
                 h -= (h - w); ;
             }
 
-            // Resize using Bilinear or Nearest neighbour
+            // Resize using bilinear
             bool bilinear = true;
             Matrix matrix = new Matrix();
             matrix.PostScale((float) tfInputSize.Width / w,
                              (float) tfInputSize.Height / h);
 
-            // Rotation counter-clockwise in 90 degree increments
-            int numRotation = -imageRotationDegrees / 90;
-            matrix.PostRotate(-90 * numRotation);
+            // Rotate counter-clockwise
+            matrix.PostRotate(imageRotationDegrees);
             Bitmap bitmapInput = Bitmap.CreateBitmap(bitmapBuffer, x, y, w, h, matrix, bilinear);
 
             // Process the image in Tensorflow
