@@ -303,7 +303,7 @@ namespace CameraXBasic.Fragments
                     (ILifecycleOwner) this, cameraSelector, preview, imageCapture, imageAnalyzer);
 
                 // Attach the viewfinder's surface provider to preview use case
-                preview?.SetSurfaceProvider(viewFinder.CreateSurfaceProvider());
+                preview?.SetSurfaceProvider(viewFinder.SurfaceProvider);
             }
             catch (Java.Lang.Exception exc)
             {
