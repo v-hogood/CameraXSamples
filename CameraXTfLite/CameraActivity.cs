@@ -8,7 +8,6 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
-using Android.Support.V7.App;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
@@ -22,6 +21,7 @@ using AndroidX.Lifecycle;
 using Xamarin.TensorFlow.Lite;
 using Xamarin.TensorFlow.Lite.Nnapi;
 using Camera.Utils;
+using AndroidX.AppCompat.App;
 
 namespace CameraXTfLite
 {
@@ -175,7 +175,7 @@ namespace CameraXTfLite
                         (ILifecycleOwner) this, cameraSelector, preview, imageAnalysis);
 
                     // Use the camera object to link our preview use case with the view
-                    preview.SetSurfaceProvider(viewFinder.CreateSurfaceProvider());
+                    preview.SetSurfaceProvider(viewFinder.SurfaceProvider);
 
                 }), ContextCompat.GetMainExecutor(this));
             });
