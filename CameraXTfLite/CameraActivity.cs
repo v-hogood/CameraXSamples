@@ -1,5 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Android;
 using Android.App;
@@ -11,6 +9,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
+using AndroidX.AppCompat.App;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
@@ -18,10 +17,15 @@ using AndroidX.ConstraintLayout.Widget;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Lifecycle;
+using Java.Lang;
+using Java.Util.Concurrent;
 using Xamarin.TensorFlow.Lite;
 using Xamarin.TensorFlow.Lite.Nnapi;
+using Org.Tensorflow.Lite.Support.Common.Ops;
+using Org.Tensorflow.Lite.Support.Image;
+using Org.Tensorflow.Lite.Support.Image.Ops;
+using Org.Tensorflow.Lite.Support.Common;
 using Camera.Utils;
-using AndroidX.AppCompat.App;
 
 namespace CameraXTfLite
 {
@@ -34,23 +38,21 @@ namespace CameraXTfLite
         private ConstraintLayout container;
         private Bitmap bitmapBuffer;
 
-        private Java.Util.Concurrent.IExecutorService executor =
-            Java.Util.Concurrent.Executors.NewSingleThreadExecutor();
+        private IExecutorService executor = Executors.NewSingleThreadExecutor();
         private string[] permissions = { Manifest.Permission.Camera };
-        private int permissionsRequestCode = new Random().Next(0, 10000);
+        private int permissionsRequestCode = new System.Random().Next(0, 10000);
 
         private int lensFacing = CameraSelector.LensFacingBack;
         private bool isFrontFacing() { return lensFacing == CameraSelector.LensFacingFront; }
 
         private bool pauseAnalysis = false;
         private int imageRotationDegrees = 0;
-        private Java.Nio.ByteBuffer tfImageBuffer;
+        private TensorImage tfImageBuffer = new TensorImage();
 
+        private ImageProcessor tfImageProcessor;
         private Interpreter tflite;
         private ObjectDetectionHelper detector;
         private Size tfInputSize;
-        private int[] argb8888;
-        private byte[] rgb888;
 
         private YuvToRgbConverter converter;
         private int frameCounter;
@@ -66,40 +68,15 @@ namespace CameraXTfLite
 
             FindViewById(Resource.Id.camera_capture_button).SetOnClickListener(this);
 
-            // load mapped file
-            var fd = Assets.OpenFd(ModelPath);
-            var channel = new Java.IO.FileInputStream(fd.FileDescriptor).Channel;
-            var model = channel.Map(Java.Nio.Channels.FileChannel.MapMode.ReadOnly,
-                fd.StartOffset, fd.Length);
-            tflite = new Interpreter(model,
+            tflite = new Interpreter(FileUtil.LoadMappedFile(this, ModelPath),
                 new Interpreter.Options().AddDelegate(new NnApiDelegate()));
-            fd.Close();
 
-            // load labels
-            var stream = Assets.Open(LabelsPath);
-            var reader = new Java.IO.BufferedReader(
-                new Java.IO.InputStreamReader(stream));
-            List<string> labels = new List<string>();
-            string line;
-            while ((line = reader.ReadLine()) != null)
-            {
-                if (line.Trim().Length > 0)
-                {
-                    labels.Add(line);
-                }
-            }
-            detector = new ObjectDetectionHelper(tflite, labels);
-            stream.Close();
+            detector = new ObjectDetectionHelper(tflite,
+                FileUtil.LoadLabels(this, LabelsPath));
 
-            // find input size
             var inputIndex = 0;
             var inputShape = tflite.GetInputTensor(inputIndex).Shape();
             tfInputSize = new Size(inputShape[2], inputShape[1]); // Order of axis is: {1, height, width, 3}
-            argb8888 = new int[tfInputSize.Width * tfInputSize.Height];
-            rgb888 = new byte[tfInputSize.Width * tfInputSize.Height * 3];
-
-            tfImageBuffer = Java.Nio.ByteBuffer.AllocateDirect(tfInputSize.Width * tfInputSize.Height * 3);
-            tfImageBuffer.Order(Java.Nio.ByteOrder.NativeOrder());
         }
 
         public void OnClick(View v)
@@ -142,7 +119,7 @@ namespace CameraXTfLite
             viewFinder.Post(() =>
             {
                 var cameraProviderFuture = ProcessCameraProvider.GetInstance(this);
-                cameraProviderFuture.AddListener(new Java.Lang.Runnable(() =>
+                cameraProviderFuture.AddListener(new Runnable(() =>
                 {
                     // Camera provider is now guaranteed to be available
                     var cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider;
@@ -161,7 +138,7 @@ namespace CameraXTfLite
                         .Build();
 
                     frameCounter = 0;
-                    lastFpsTimestamp = Java.Lang.JavaSystem.CurrentTimeMillis();
+                    lastFpsTimestamp = JavaSystem.CurrentTimeMillis();
                     converter = new YuvToRgbConverter(this);
 
                     imageAnalysis.SetAnalyzer(executor, this);
@@ -172,7 +149,7 @@ namespace CameraXTfLite
                     // Apply declared configs to CameraX using the same lifecycle owner
                     cameraProvider.UnbindAll();
                     var camera = cameraProvider.BindToLifecycle(
-                        (ILifecycleOwner) this, cameraSelector, preview, imageAnalysis);
+                        this as ILifecycleOwner, cameraSelector, preview, imageAnalysis);
 
                     // Use the camera object to link our preview use case with the view
                     preview.SetSurfaceProvider(viewFinder.SurfaceProvider);
@@ -190,6 +167,15 @@ namespace CameraXTfLite
                 imageRotationDegrees = image.ImageInfo.RotationDegrees;
                 bitmapBuffer = Bitmap.CreateBitmap(
                     image.Width, image.Height, Bitmap.Config.Argb8888);
+
+                var cropSize = Math.Min(bitmapBuffer.Width, bitmapBuffer.Height);
+                tfImageProcessor = new ImageProcessor.Builder()
+                    .Add(new ResizeWithCropOrPadOp(cropSize, cropSize))
+                    .Add(new ResizeOp(
+                        tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.NearestNeighbor))
+                    .Add(new Rot90Op(-imageRotationDegrees / 90))
+                    .Add(new NormalizeOp(0f, 1f))
+                    .Build();
             }
 
             // Early exit: image analysis is in paused state
@@ -203,48 +189,12 @@ namespace CameraXTfLite
             converter.YuvToRgb(image.Image, bitmapBuffer);
             image.Close();
 
-            // Center crop the image to the largest square possible
-            int x = 0;
-            int y = 0;
-            int w = bitmapBuffer.Width;
-            int h = bitmapBuffer.Height;
-            if (w > h)
-            {
-                x += (w - h) / 2;
-                w -= (w - h);
-            }
-            else
-            {
-                y += (h - w) / 2;
-                h -= (h - w); ;
-            }
-
-            // Resize using bilinear
-            bool bilinear = true;
-            Matrix matrix = new Matrix();
-            matrix.PostScale((float) tfInputSize.Width / w,
-                             (float) tfInputSize.Height / h);
-
-            // Rotate counter-clockwise
-            matrix.PostRotate(imageRotationDegrees);
-            Bitmap bitmapInput = Bitmap.CreateBitmap(bitmapBuffer, x, y, w, h, matrix, bilinear);
-
             // Process the image in Tensorflow
-            w = bitmapInput.Width;
-            h = bitmapInput.Height;
-            bitmapInput.GetPixels(argb8888, 0, w, 0, 0, w, h);
-            for (int j = 0, i = 0; i <argb8888.Length; i++)
-            {
-                rgb888[j++] = (byte) (argb8888[i] >> 16 & 0xff);
-                rgb888[j++] = (byte) (argb8888[i] >>  8 & 0xff);
-                rgb888[j++] = (byte) (argb8888[i]       & 0xff);
-            }
-            tfImageBuffer.Rewind();
-            tfImageBuffer.Put(rgb888);
-            tfImageBuffer.Rewind();
+            tfImageBuffer.Load(bitmapBuffer);
+            var tfImage = tfImageProcessor.Process(tfImageBuffer) as TensorImage;
 
             // Perform the object detection for the current frame
-            var predictions = detector.Predict(tfImageBuffer);
+            var predictions = detector.Predict(tfImage);
 
             // Report only the top prediction
             ReportPrediction(predictions.OrderBy(p => p.Score).Last());
@@ -254,7 +204,7 @@ namespace CameraXTfLite
             if (++frameCounter % frameCount == 0)
             {
                 frameCounter = 0;
-                var now = Java.Lang.JavaSystem.CurrentTimeMillis();
+                var now = JavaSystem.CurrentTimeMillis();
                 var delta = now - lastFpsTimestamp;
                 var fps = 1000 * (float) frameCount / delta;
                 Log.Debug(Tag, "FPS: " + fps.ToString("0.00"));
@@ -356,9 +306,8 @@ namespace CameraXTfLite
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             if (requestCode == permissionsRequestCode && HasPermissions(this))
             {
                 BindCameraUseCases();
@@ -375,7 +324,7 @@ namespace CameraXTfLite
             return permissions.All(x => ContextCompat.CheckSelfPermission(context, x) == Permission.Granted);
         }
 
-        private const string Tag = "CameraXTfLite";
+        private string Tag = typeof(CameraActivity).Name;
 
         private const float AccuracyThreshold = 0.5f;
         private const string ModelPath = "coco_ssd_mobilenet_v1_1.0_quant.tflite";

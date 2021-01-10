@@ -58,6 +58,9 @@
     <Reference Include="Mono.Android" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors" />
+    <Reference Include="tensorflow_lite_support">
+      <HintPath>tensorflow_lite_support.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CameraActivity.cs" />
