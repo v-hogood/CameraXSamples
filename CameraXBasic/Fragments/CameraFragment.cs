@@ -533,7 +533,7 @@ namespace CameraXBasic.Fragments
             void ToByteArray(Java.Nio.ByteBuffer byteBuffer)
             {
                 byteBuffer.Rewind();    // Rewind the buffer to zero
-                if (data == null)
+                if (data == null || data.Length != byteBuffer.Remaining())
                 {
                     // The int buffer is initialized only once the analyzer has started running
                     data = new byte[byteBuffer.Remaining()];
