@@ -46,34 +46,41 @@ namespace Camera.Utils
                 yuvBuffer = new byte[pixelCount * pixelSizeBits / 8];
             }
 
-            // Get the YUV data in byte array form using NV21 format
-            ImageToByteArray(image, yuvBuffer);
+            // Get the YUV data in byte array form using NV21 or YV12 format
+            ImageFormatType format = ImageToByteArray(image, yuvBuffer);
 
             // Ensure that the RenderScript inputs and outputs are allocated
             if (inputAllocation == null)
             {
-                // Explicitly create an element with type NV21, since that's the pixel format we use
-                var elemType = new Type.Builder(rs, Element.U8(rs)).SetYuvFormat((int) ImageFormatType.Nv21).Create();
-                inputAllocation = Allocation.CreateSized(rs, elemType.Element, yuvBuffer.Length);
+                // Explicitly create an element with type NV21 or YV12, since that's the pixel format we use
+                var elemType = new Type.Builder(rs, Element.YUV(rs)).SetYuvFormat((int) format).
+                    SetX(image.CropRect.Width()).SetY(image.CropRect.Height()).Create();
+                inputAllocation = Allocation.CreateTyped(rs, elemType);
             }
             if (outputAllocation == null)
             {
                 outputAllocation = Allocation.CreateFromBitmap(rs, output);
             }
 
-            // Convert NV21 format YUV to RGB
+            // Convert NV21 or YV12 format YUV to RGB
             inputAllocation.CopyFrom(yuvBuffer);
             scriptYuvToRgb.SetInput(inputAllocation);
             scriptYuvToRgb.ForEach(outputAllocation);
             outputAllocation.CopyTo(output);
         }
 
-        private void ImageToByteArray(Image image, byte[] outputBuffer)
+        private ImageFormatType ImageToByteArray(Image image, byte[] outputBuffer)
         {
             Debug.Assert(image.Format == ImageFormatType.Yuv420888);
 
             var imageCrop = image.CropRect;
             var imagePlanes = image.GetPlanes();
+
+            // Check if U and V are planar
+            var format =
+                imagePlanes[1].PixelStride == 1 &&
+                imagePlanes[2].PixelStride == 1 ?
+                ImageFormatType.Yv12 : ImageFormatType.Nv21;
 
             // Usually the VU planes are already interleaved
             var vuInterleaved =
@@ -113,8 +120,8 @@ namespace Camera.Utils
                 switch (planeIndex)
                 {
                     case 0:
-                        outputStride = 1;
                         outputOffset = 0;
+                        outputStride = 1;
                         break;
                     case 1:
                         if (vuInterleaved)
@@ -122,18 +129,36 @@ namespace Camera.Utils
                             // If VU are already interleaved skip U and do VU as V.
                             continue;
                         }
-                        outputStride = 2;
-                        // For NV21 format, U is in odd-numbered indices
-                        outputOffset = pixelCount + 1;
+                        if (format == ImageFormatType.Yv12)
+                        {
+                            // For YV12 format, U plane is after V plane
+                            outputOffset = pixelCount + pixelCount / 4;
+                            outputStride = 1;
+                        }
+                        else
+                        {
+                            // For NV21 format, U is in odd-numbered indices
+                            outputOffset = pixelCount + 1;
+                            outputStride = 2;
+                        }
                         break;
                     case 2:
-                        outputStride = 2;
-                        // For NV21 format, V is in even-numbered indices
-                        outputOffset = pixelCount;
+                        if (format == ImageFormatType.Yv12)
+                        {
+                            // For YV12 format, V plane is before U plane
+                            outputOffset = pixelCount;
+                            outputStride = 1;
+                        }
+                        else
+                        {
+                            // For NV21 format, V is in even-numbered indices
+                            outputOffset = pixelCount;
+                            outputStride = 2;
+                        }
                         break;
                     default:
                         // Image contains more than 3 planes, something strange is going on
-                        return;
+                        return ImageFormatType.Unknown;
                 }
 
                 var plane = imagePlanes[planeIndex];
@@ -154,13 +179,10 @@ namespace Camera.Utils
                 var planeWidth = planeCrop.Width();
                 var planeHeight = planeCrop.Height();
 
-                if (imageCrop.Width() == image.Width &&
-                    rowStride == planeWidth * outputStride)
+                if (rowStride == planeWidth * outputStride)
                 {
-                    // When the image is not cropped horizontally,
-                    // and the plane strides match the output strides,
+                    // When the plane strides match the output strides,
                     // we can just copy the entire plane in a single step
-
                     if ((pixelStride == 1 && outputStride == 1) ||
                         (pixelStride == 2 && outputStride == 2 && vuInterleaved))
                     {
@@ -217,6 +239,8 @@ namespace Camera.Utils
                     }
                 }
             }
+
+            return format;
         }
     }
 }
