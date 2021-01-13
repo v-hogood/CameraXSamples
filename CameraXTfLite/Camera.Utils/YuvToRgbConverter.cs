@@ -4,6 +4,7 @@ using Android.Content;
 using Android.Graphics;
 using Android.Media;
 using Android.Renderscripts;
+using Java.Nio;
 
 namespace Camera.Utils
 {
@@ -31,6 +32,8 @@ namespace Camera.Utils
 
         private int pixelCount = -1;
         private byte[] yuvBuffer;
+        private byte[] rowBuffer;
+        private short[] vuBuffer;
         private Allocation inputAllocation;
         private Allocation outputAllocation;
 
@@ -82,6 +85,31 @@ namespace Camera.Utils
                 imagePlanes[2].PixelStride == 1 ?
                 ImageFormatType.Yv12 : ImageFormatType.Nv21;
 
+            // Check if U and V are interleaved and convert to VU
+            var uvInterleaved =
+                imagePlanes[1].Buffer.GetDirectBufferAddress() + 1 ==
+                imagePlanes[2].Buffer.GetDirectBufferAddress();
+            if (uvInterleaved)
+            {
+                if (vuBuffer == null || vuBuffer.Length != imagePlanes[1].RowStride * imageCrop.Height() / 4)
+                {
+                    vuBuffer = new short[imagePlanes[1].RowStride * imageCrop.Height() / 4];
+                }
+
+                // Get/Put BigEndian/LittleEndian shorts to swap UV to VU
+                var swapEndian = imagePlanes[1].Buffer.Order() == ByteOrder.BigEndian ?
+                    ByteOrder.LittleEndian : ByteOrder.BigEndian;
+                imagePlanes[1].Buffer.Position(imagePlanes[1].RowStride * imageCrop.Top / 2);
+                imagePlanes[1].Buffer.Order(swapEndian).AsShortBuffer().Get(vuBuffer, 0, vuBuffer.Length - 1);
+
+                // Swap last UV to VU
+                swapEndian = imagePlanes[2].Buffer.Order() == ByteOrder.BigEndian ?
+                   ByteOrder.LittleEndian : ByteOrder.BigEndian;
+                imagePlanes[2].Buffer.Position(imagePlanes[2].RowStride * imageCrop.Top / 2 +
+                   (vuBuffer.Length - 1) * 2 - 1);
+                imagePlanes[2].Buffer.Order(swapEndian).AsShortBuffer().Get(vuBuffer, vuBuffer.Length - 1, 1);
+            }
+
             // Usually the VU planes are already interleaved
             var vuInterleaved =
                 imagePlanes[1].Buffer.GetDirectBufferAddress() ==
@@ -124,7 +152,7 @@ namespace Camera.Utils
                         outputStride = 1;
                         break;
                     case 1:
-                        if (vuInterleaved)
+                        if (vuInterleaved || uvInterleaved)
                         {
                             // If VU are already interleaved skip U and do VU as V.
                             continue;
@@ -179,29 +207,36 @@ namespace Camera.Utils
                 var planeWidth = planeCrop.Width();
                 var planeHeight = planeCrop.Height();
 
-                if (rowStride == planeWidth * outputStride)
+                if (rowStride == planeWidth * outputStride && pixelStride == outputStride)
                 {
                     // When the plane strides match the output strides,
                     // we can just copy the entire plane in a single step
-                    if ((pixelStride == 1 && outputStride == 1) ||
-                        (pixelStride == 2 && outputStride == 2 && vuInterleaved))
+                    if (uvInterleaved && planeIndex == 2)
+                    {
+                        // Copy the plane
+                        System.Buffer.BlockCopy(vuBuffer, 0, outputBuffer, outputOffset, rowStride * planeHeight);
+                    }
+                    else
                     {
                         // Move buffer position to the beginning of this plane
                         var planePtr = planeBuffer.GetDirectBufferAddress() + planeCrop.Top * rowStride;
 
                         // Copy the plane
                         Marshal.Copy(planePtr, outputBuffer, outputOffset, rowStride * planeHeight);
-                        continue;
                     }
+                    continue;
                 }
 
                 // Intermediate buffer used to store the bytes of each row
-                var rowBuffer = new byte[plane.RowStride];
+                if (rowBuffer == null || rowBuffer.Length != plane.RowStride)
+                {
+                    rowBuffer = new byte[plane.RowStride];
+                }
 
                 // Size of each row in bytes
                 var rowLength = (pixelStride == 1 && outputStride == 1) ?
                     planeWidth :
-                    (pixelStride == 2 && outputStride == 2 && vuInterleaved ?
+                    (pixelStride == 2 && outputStride == 2 && (vuInterleaved || uvInterleaved) ?
                     planeWidth * 2 :
                     // Take into account that the stride may include data from pixels other than this
                     // particular plane and row, and that could be between pixels and not after every
@@ -219,12 +254,19 @@ namespace Camera.Utils
                     var rowPtr = planeBuffer.GetDirectBufferAddress() +
                         (row + planeCrop.Top) * rowStride + planeCrop.Left * pixelStride;
 
-                    if ((pixelStride == 1 && outputStride == 1) ||
-                        (pixelStride == 2 && outputStride == 2 && vuInterleaved))
+                    if (pixelStride == outputStride)
                     {
                         // When there is a single stride value for pixel and output, we can just copy
                         // the entire row in a single step
-                        Marshal.Copy(rowPtr, outputBuffer, outputOffset, rowLength);
+                        if (uvInterleaved && planeIndex == 2)
+                        {
+                            var vuOffset = row * rowStride + planeCrop.Left * pixelStride;
+                            System.Buffer.BlockCopy(vuBuffer, vuOffset, outputBuffer, outputOffset, rowLength);
+                        }
+                        else
+                        {
+                            Marshal.Copy(rowPtr, outputBuffer, outputOffset, rowLength);
+                        }
                         outputOffset += rowLength;
                     }
                     else
