@@ -4,7 +4,7 @@ VisualStudioVersion = 16.0.30621.155
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraXTfLite", "CameraXTfLite.csproj", "{B52DA3C7-3B4D-4FDB-BEA6-3239CF21EC65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Camera.Utils", "Camera.Utils\Camera.Utils.csproj", "{320822AF-9F5C-484C-A07D-9F2C3E9D7034}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraUtils", "CameraUtils\CameraUtils.csproj", "{320822AF-9F5C-484C-A07D-9F2C3E9D7034}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

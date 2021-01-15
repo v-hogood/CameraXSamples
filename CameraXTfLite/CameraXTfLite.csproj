@@ -140,9 +140,9 @@
     <PackageReference Include="Xamarin.TensorFlow.Lite" Version="2.1.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Camera.Utils\Camera.Utils.csproj">
+    <ProjectReference Include="CameraUtils\CameraUtils.csproj">
       <Project>{320822AF-9F5C-484C-A07D-9F2C3E9D7034}</Project>
-      <Name>Camera.Utils</Name>
+      <Name>CameraUtils</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

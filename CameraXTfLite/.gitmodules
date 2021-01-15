@@ -1,0 +1,3 @@
+[submodule "CameraUtils"]
+	path = CameraUtils
+	url = https://github.com/v-hogood/CameraUtils.git
