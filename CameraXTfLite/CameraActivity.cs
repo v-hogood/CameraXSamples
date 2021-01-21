@@ -98,11 +98,9 @@ namespace CameraXTfLite
                 {
                     // Otherwise, pause image analysis and freeze image
                     pauseAnalysis = true;
-                    var matrix = new Matrix();
-                    matrix.PostRotate((float) imageRotationDegrees);
-                    if (isFrontFacing()) matrix.PostScale(-1f, 1f);
+                    var matrix = ExifUtils.DecodeExifOrientation(ExifUtils.ComputeExifOrientation(imageRotationDegrees, isFrontFacing()));
                     var uprightImage = Bitmap.CreateBitmap(
-                        bitmapBuffer, 0, 0, bitmapBuffer.Width, bitmapBuffer.Height, matrix, true);
+                        bitmapBuffer, 0, 0, bitmapBuffer.Width, bitmapBuffer.Height, matrix, false);
                     imagePredicted.SetImageBitmap(uprightImage);
                     imagePredicted.Visibility = ViewStates.Visible;
                 }
@@ -172,7 +170,7 @@ namespace CameraXTfLite
                 tfImageProcessor = new ImageProcessor.Builder()
                     .Add(new ResizeWithCropOrPadOp(cropSize, cropSize))
                     .Add(new ResizeOp(
-                        tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.NearestNeighbor))
+                        tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.Bilinear))
                     .Add(new Rot90Op(-imageRotationDegrees / 90))
                     .Add(new NormalizeOp(0f, 1f))
                     .Build();
