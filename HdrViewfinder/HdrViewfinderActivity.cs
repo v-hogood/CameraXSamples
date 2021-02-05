@@ -11,11 +11,11 @@ using Android.OS;
 using Android.Provider;
 using Android.Renderscripts;
 using Android.Runtime;
+using Android.Support.V4.App;
+using Android.Support.V7.App;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
-using AndroidX.AppCompat.App;
-using AndroidX.Core.App;
 using Google.Android.Material.Snackbar;
 using Java.Lang;
 
