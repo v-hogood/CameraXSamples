@@ -111,6 +111,13 @@
     <LibraryProjectZip Include="Jars\hdr_merge.aar" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.Bindings.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>$(ProjectDir)hdr_merge\gradlew -p $(ProjectDir)hdr_merge assemble &amp;&amp;^
+copy /y $(ProjectDir)hdr_merge\hdr_merge\build\outputs\aar\hdr_merge-release.aar $(ProjectDir)Jars\hdr_merge.aar</PreBuildEvent>
+  </PropertyGroup>
+  <Target Name="BeforeClean">
+    <Exec Command="hdr_merge\gradlew -p hdr_merge clean" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
