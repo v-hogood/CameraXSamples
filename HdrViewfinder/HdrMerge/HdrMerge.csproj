@@ -59,6 +59,16 @@
   <ItemGroup>
     <None Include="Jars\AboutJars.txt" />
     <None Include="Additions\AboutAdditions.txt" />
+    <None Include="hdr_merge\gradlew" />
+    <None Include="hdr_merge\build.gradle" />
+    <None Include="hdr_merge\gradle.properties" />
+    <None Include="hdr_merge\gradlew.bat" />
+    <None Include="hdr_merge\settings.gradle" />
+    <None Include="hdr_merge\hdr_merge\build.gradle" />
+    <None Include="hdr_merge\hdr_merge\src\main\AndroidManifest.xml" />
+    <None Include="hdr_merge\hdr_merge\src\main\rs\hdr_merge.rs" />
+    <None Include="hdr_merge\gradle\wrapper\gradle-wrapper.jar" />
+    <None Include="hdr_merge\gradle\wrapper\gradle-wrapper.properties" />
   </ItemGroup>
   <ItemGroup>
     <TransformFile Include="Transforms\Metadata.xml" />
