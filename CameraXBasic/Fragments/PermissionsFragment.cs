@@ -2,7 +2,6 @@
 using Android;
 using Android.Content;
 using Android.Content.PM;
-using Android.OS;
 using Android.Widget;
 using AndroidX.Core.Content;
 using AndroidX.Fragment.App;
