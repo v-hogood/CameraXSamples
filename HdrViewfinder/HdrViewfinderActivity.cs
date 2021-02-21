@@ -305,8 +305,8 @@ namespace HdrViewfinder
                         {
                             // Request Camera permission
                             ActivityCompat.RequestPermissions(this,
-                                    new string[] { Manifest.Permission.Camera },
-                                    RequestPermissionsRequestCode);
+                                new string[] { Manifest.Permission.Camera },
+                                RequestPermissionsRequestCode);
                         })
                         .Show();
             }
@@ -413,6 +413,7 @@ namespace HdrViewfinder
                         // for only the things we care about expands range of devices we can run on.
                         // We want:
                         //  - Back-facing camera
+                        //  - Manual sensor control
                         //  - Per-frame synchronization (so that exposure can be changed every frame)
                         if (facing.IntValue() == (int) LensFacing.Back &&
                             (hasFullLevel || hasEnoughCapability))
