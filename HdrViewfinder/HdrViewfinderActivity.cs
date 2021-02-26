@@ -529,7 +529,7 @@ namespace HdrViewfinder
         {
             if (mProcessor == null || mPreviewSurface == null) return;
 
-            mProcessor.setOutputSurface(mPreviewSurface);
+            mProcessor.SetOutputSurface(mPreviewSurface);
             mProcessingHdrSurface = mProcessor.GetInputHdrSurface();
             mProcessingNormalSurface = mProcessor.GetInputNormalSurface();
 

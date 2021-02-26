@@ -72,7 +72,7 @@ namespace HdrViewfinder
             return mInputNormalAllocation.Surface;
         }
 
-        public void setOutputSurface(Surface output)
+        public void SetOutputSurface(Surface output)
         {
             mOutputAllocation.Surface = output;
         }
