@@ -60,7 +60,8 @@ namespace HdrViewfinder
 
     [Activity(Name = "com.example.android.hdrviewfinder.HdrViewfinderActivity", Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class HdrViewfinderActivity : AppCompatActivity,
-        View.IOnClickListener, View.IOnTouchListener, TextureView.ISurfaceTextureListener, Preview.ISurfaceProvider, IConsumer
+        View.IOnClickListener, View.IOnTouchListener, TextureView.ISurfaceTextureListener, Preview.ISurfaceProvider, IConsumer,
+        SurfaceRequest.ITransformationInfoListener
     {
         private const string Tag = "HdrViewfinderDemo";
 
@@ -93,8 +94,9 @@ namespace HdrViewfinder
         private ICameraControl mCameraControl;
 
         private LensFacing mLensFacing = LensFacing.Back;
-        private Size mPreviewSize;
+        private SurfaceRequest mSurfaceRequest;
         private bool mSurfaceTextureUpdated;
+        private bool mTransformationInfoUpdated;
 
         RenderScript mRS;
         ViewfinderProcessor mProcessor;
@@ -396,6 +398,7 @@ namespace HdrViewfinder
                         mCameraControl = camera.CameraControl;
                         preview.SetSurfaceProvider(this);
                         mSurfaceTextureUpdated = false;
+                        mTransformationInfoUpdated = false;
                         foundCamera = true;
                     }
                     if (!foundCamera)
@@ -515,18 +518,15 @@ namespace HdrViewfinder
         //
         public void OnSurfaceRequested(SurfaceRequest request)
         {
-            mPreviewSize = request.Resolution;
-            Log.Info(Tag, "Resolution chosen: " + mPreviewSize);
+            Log.Info(Tag, "Resolution chosen: " + request.Resolution);
 
             // Configure processing
-            mProcessor = new ViewfinderProcessor(mRS, mPreviewSize);
+            mProcessor = new ViewfinderProcessor(mRS, request.Resolution);
 
             request.ProvideSurface(mProcessor.GetInputHdrSurface(), mExecutor, this);
 
-            mPreviewView.SurfaceProvider.OnSurfaceRequested(request);
-
-            mTextureView = mPreviewView.GetChildAt(0) as TextureView;
-            mTextureView.SurfaceTextureListener = this;
+            this.mSurfaceRequest = request;
+            request.SetTransformationInfoListener(mExecutor, this);
         }
 
         public void Accept(Object resultObject)
@@ -535,13 +535,28 @@ namespace HdrViewfinder
             Log.Info(Tag, "SurfaceRequest ResultCode: ", result.ResultCode);
         }
 
+        public void OnTransformationInfoUpdate(SurfaceRequest.TransformationInfo transformationInfo)
+        {
+            if (!mTransformationInfoUpdated)
+            {
+                mSurfaceRequest.UpdateTransformationInfo(SurfaceRequest.TransformationInfo.Of(
+                    transformationInfo.CropRect, transformationInfo.RotationDegrees,
+                    (transformationInfo.TargetRotation - mCameraInfo.SensorRotationDegrees / 90 + 4) % 4));
+                mPreviewView.SurfaceProvider.OnSurfaceRequested(mSurfaceRequest);
+
+                mTextureView = mPreviewView.GetChildAt(0) as TextureView;
+                mTextureView.SurfaceTextureListener = this;
+                mTransformationInfoUpdated = true;
+            }
+        }
+
         //
         // Callbacks for ISurfaceTextureListener
         //
         public void OnSurfaceTextureAvailable(SurfaceTexture texture, int width, int height)
         {
             // We configure the size of default buffer to be the size of camera preview we want.
-            mTextureView.SurfaceTexture.SetDefaultBufferSize(mPreviewSize.Height, mPreviewSize.Width);
+            mTextureView.SurfaceTexture.SetDefaultBufferSize(mSurfaceRequest.Resolution.Width, mSurfaceRequest.Resolution.Height);
 
             mProcessor.SetOutputSurface(new Surface(texture));
         }
@@ -555,8 +570,8 @@ namespace HdrViewfinder
         {
             if (!mSurfaceTextureUpdated)
             {
-                float centerX = mPreviewSize.Width / 2;
-                float centerY = mPreviewSize.Height / 2;
+                float centerX = mSurfaceRequest.Resolution.Width / 2;
+                float centerY = mSurfaceRequest.Resolution.Height / 2;
 
                 Matrix matrix = new Matrix();
                 mTextureView.GetTransform(matrix);
@@ -583,13 +598,6 @@ namespace HdrViewfinder
                         matrix.PreScale(-1F, 1F, centerX, centerY);
                     }
                 }
-                if (mCameraInfo.SensorRotationDegrees == 90 ||
-                    mCameraInfo.SensorRotationDegrees == 270)
-                {
-                    float aspect = centerX / centerY;
-                    matrix.PostScale(1f / aspect, aspect, centerX, centerY);
-                }
-                matrix.PostRotate(mCameraInfo.SensorRotationDegrees, centerX, centerY);
                 mTextureView.SetTransform(matrix);
                 mSurfaceTextureUpdated = true;
             }
