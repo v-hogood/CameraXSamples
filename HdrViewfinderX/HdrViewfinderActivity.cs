@@ -87,7 +87,7 @@ namespace HdrViewfinder
         // These show lengths of exposure for even frames, exposure for odd frames, and auto exposure.
         private TextView mEvenExposureText, mOddExposureText, mAutoExposureText;
 
-        private IExecutorService mExecutor;
+        private IExecutor mExecutor;
 
         private ICameraInfo mCameraInfo;
         private ICameraControl mCameraControl;
@@ -139,7 +139,7 @@ namespace HdrViewfinder
             mOddExposureText = (TextView)FindViewById(Resource.Id.odd_exposure);
             mAutoExposureText = (TextView)FindViewById(Resource.Id.auto_exposure);
 
-            mExecutor = Executors.NewSingleThreadExecutor();
+            mExecutor = ContextCompat.GetMainExecutor(this);
 
             mRS = RenderScript.Create(this);
 
@@ -413,7 +413,7 @@ namespace HdrViewfinder
                 {
                     ShowErrorDialog(errorMessage);
                 }
-            }), ContextCompat.GetMainExecutor(this));
+            }), mExecutor);
         }
 
         private void SwitchRenderMode(int direction)
@@ -483,33 +483,30 @@ namespace HdrViewfinder
                 Rational exposureStep = mParent.mCameraInfo.ExposureState.ExposureCompensationStep;
                 string exposureText = (exposureComp.FloatValue() * exposureStep.FloatValue()).ToString("0.00");
 
-                mParent.rootView.Post(() =>
+                if (mParent.mRenderMode == ViewfinderProcessor.ModeNormal)
                 {
-                    if (mParent.mRenderMode == ViewfinderProcessor.ModeNormal)
-                    {
-                        mParent.mAutoExposureText.Text = exposureText;
+                    mParent.mAutoExposureText.Text = exposureText;
 
-                        mParent.mEvenExposureText.Enabled = false;
-                        mParent.mOddExposureText.Enabled = false;
-                        mParent.mAutoExposureText.Enabled = true;
-                    }
-                    else if ((frameNumber & 1) == 1)
-                    {
-                        mParent.mOddExposureText.Text = exposureText;
+                    mParent.mEvenExposureText.Enabled = false;
+                    mParent.mOddExposureText.Enabled = false;
+                    mParent.mAutoExposureText.Enabled = true;
+                }
+                else if ((frameNumber & 1) == 0)
+                {
+                    mParent.mEvenExposureText.Text = exposureText;
 
-                        mParent.mEvenExposureText.Enabled = true;
-                        mParent.mOddExposureText.Enabled = true;
-                        mParent.mAutoExposureText.Enabled = false;
-                    }
-                    else
-                    {
-                        mParent.mEvenExposureText.Text = exposureText;
+                    mParent.mEvenExposureText.Enabled = true;
+                    mParent.mOddExposureText.Enabled = true;
+                    mParent.mAutoExposureText.Enabled = false;
+                }
+                else
+                {
+                    mParent.mOddExposureText.Text = exposureText;
 
-                        mParent.mEvenExposureText.Enabled = true;
-                        mParent.mOddExposureText.Enabled = true;
-                        mParent.mAutoExposureText.Enabled = false;
-                    }
-                });
+                    mParent.mEvenExposureText.Enabled = true;
+                    mParent.mOddExposureText.Enabled = true;
+                    mParent.mAutoExposureText.Enabled = false;
+                }
             }
         }
 
