@@ -60,7 +60,7 @@ namespace HdrViewfinder
 
     [Activity(Name = "com.example.android.hdrviewfinder.HdrViewfinderActivity", Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class HdrViewfinderActivity : AppCompatActivity,
-        View.IOnClickListener, View.IOnTouchListener, TextureView.ISurfaceTextureListener, Preview.ISurfaceProvider, IConsumer,
+        View.IOnClickListener, View.IOnTouchListener, Preview.ISurfaceProvider, IConsumer,
         SurfaceRequest.ITransformationInfoListener
     {
         private const string Tag = "HdrViewfinderDemo";
@@ -73,7 +73,6 @@ namespace HdrViewfinder
         // View for the camera preview.
         //
         private PreviewView mPreviewView;
-        private TextureView mTextureView;
 
         //
         // Root view of this activity.
@@ -453,6 +452,8 @@ namespace HdrViewfinder
                                                   CaptureRequest request,
                                                   long timeStamp, long frameNumber)
             {
+                mParent.OnSurfaceTextureUpdated();
+
                 if (mParent.mRenderMode == ViewfinderProcessor.ModeNormal)
                 {
                     mParent.mCameraControl.SetExposureCompensationIndex(mParent.mAutoExposure);
@@ -544,39 +545,25 @@ namespace HdrViewfinder
                     (transformationInfo.TargetRotation - mCameraInfo.SensorRotationDegrees / 90 + 4) % 4));
                 mPreviewView.SurfaceProvider.OnSurfaceRequested(mSurfaceRequest);
 
-                mTextureView = mPreviewView.GetChildAt(0) as TextureView;
-                mTextureView.SurfaceTextureListener = this;
                 mTransformationInfoUpdated = true;
             }
         }
 
-        //
-        // Callbacks for ISurfaceTextureListener
-        //
-        public void OnSurfaceTextureAvailable(SurfaceTexture texture, int width, int height)
-        {
-            // We configure the size of default buffer to be the size of camera preview we want.
-            mTextureView.SurfaceTexture.SetDefaultBufferSize(mSurfaceRequest.Resolution.Width, mSurfaceRequest.Resolution.Height);
-
-            mProcessor.SetOutputSurface(new Surface(texture));
-        }
-
-        public void OnSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height)
-        {
-            mProcessor.SetOutputSurface(new Surface(texture));
-        }
-
-        public void OnSurfaceTextureUpdated(SurfaceTexture texture)
+        public void OnSurfaceTextureUpdated()
         {
             if (!mSurfaceTextureUpdated)
             {
-                float centerX = mSurfaceRequest.Resolution.Width / 2;
-                float centerY = mSurfaceRequest.Resolution.Height / 2;
+                TextureView textureView = mPreviewView.GetChildAt(0) as TextureView;
+                // We configure the size of default buffer to be the size of camera preview we want.
+                textureView.SurfaceTexture.SetDefaultBufferSize(mSurfaceRequest.Resolution.Width, mSurfaceRequest.Resolution.Height);
+                mProcessor.SetOutputSurface(new Surface(textureView.SurfaceTexture));
 
-                Matrix matrix = new Matrix();
-                mTextureView.GetTransform(matrix);
                 if (mLensFacing == LensFacing.Front)
                 {
+                    Matrix matrix = textureView.GetTransform(null);
+                    float centerX = mSurfaceRequest.Resolution.Width / 2;
+                    float centerY = mSurfaceRequest.Resolution.Height / 2;
+
                     // SurfaceView/TextureView automatically mirrors the Surface for front camera, which
                     // needs to be compensated by mirroring the Surface around the upright direction of the
                     // output image.
@@ -597,16 +584,10 @@ namespace HdrViewfinder
                         //   +---+        +---+      +---+
                         matrix.PreScale(-1F, 1F, centerX, centerY);
                     }
+                    textureView.SetTransform(matrix);
                 }
-                mTextureView.SetTransform(matrix);
                 mSurfaceTextureUpdated = true;
             }
-        }
-
-        public bool OnSurfaceTextureDestroyed(SurfaceTexture texture)
-        {
-            mProcessor.SetOutputSurface(null);
-            return true;
         }
 
         //
