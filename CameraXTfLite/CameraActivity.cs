@@ -47,7 +47,7 @@ namespace CameraXTfLite
 
         private bool pauseAnalysis = false;
         private int imageRotationDegrees = 0;
-        private TensorImage tfImageBuffer = new TensorImage();
+        private TensorImage tfImageBuffer = new TensorImage(Xamarin.TensorFlow.Lite.DataType.Uint8);
 
         private ImageProcessor tfImageProcessor;
         private Interpreter tflite;
