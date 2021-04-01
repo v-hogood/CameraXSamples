@@ -60,8 +60,7 @@ namespace HdrViewfinder
 
     [Activity(Name = "com.example.android.hdrviewfinder.HdrViewfinderActivity", Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class HdrViewfinderActivity : AppCompatActivity,
-        View.IOnClickListener, View.IOnTouchListener, Preview.ISurfaceProvider, IConsumer,
-        SurfaceRequest.ITransformationInfoListener
+        View.IOnClickListener, View.IOnTouchListener, TextureView.ISurfaceTextureListener, Preview.ISurfaceProvider, IConsumer
     {
         private const string Tag = "HdrViewfinderDemo";
 
@@ -73,6 +72,7 @@ namespace HdrViewfinder
         // View for the camera preview.
         //
         private PreviewView mPreviewView;
+        private TextureView mTextureView;
 
         //
         // Root view of this activity.
@@ -87,15 +87,14 @@ namespace HdrViewfinder
         // These show lengths of exposure for even frames, exposure for odd frames, and auto exposure.
         private TextView mEvenExposureText, mOddExposureText, mAutoExposureText;
 
-        private IExecutor mExecutor;
+        private IExecutorService mExecutor;
 
         private ICameraInfo mCameraInfo;
         private ICameraControl mCameraControl;
 
         private LensFacing mLensFacing = LensFacing.Back;
-        private SurfaceRequest mSurfaceRequest;
+        private Size mPreviewSize;
         private bool mSurfaceTextureUpdated;
-        private bool mTransformationInfoUpdated;
 
         RenderScript mRS;
         ViewfinderProcessor mProcessor;
@@ -140,9 +139,14 @@ namespace HdrViewfinder
             mOddExposureText = (TextView)FindViewById(Resource.Id.odd_exposure);
             mAutoExposureText = (TextView)FindViewById(Resource.Id.auto_exposure);
 
-            mExecutor = ContextCompat.GetMainExecutor(this);
+            mExecutor = Executors.NewSingleThreadExecutor();
 
             mRS = RenderScript.Create(this);
+        }
+
+        protected override void OnResume()
+        {
+            base.OnResume();
 
             // When permissions are revoked the app is restarted so onCreate is sufficient to check for
             // permissions core to the Activity's functionality.
@@ -154,11 +158,6 @@ namespace HdrViewfinder
             {
                 FindAndOpenCamera();
             }
-        }
-
-        protected override void OnResume()
-        {
-            base.OnResume();
         }
 
         protected override void OnPause()
@@ -397,7 +396,6 @@ namespace HdrViewfinder
                         mCameraControl = camera.CameraControl;
                         preview.SetSurfaceProvider(this);
                         mSurfaceTextureUpdated = false;
-                        mTransformationInfoUpdated = false;
                         foundCamera = true;
                     }
                     if (!foundCamera)
@@ -415,7 +413,7 @@ namespace HdrViewfinder
                 {
                     ShowErrorDialog(errorMessage);
                 }
-            }), mExecutor);
+            }), ContextCompat.GetMainExecutor(this));
         }
 
         private void SwitchRenderMode(int direction)
@@ -452,13 +450,9 @@ namespace HdrViewfinder
                                                   CaptureRequest request,
                                                   long timeStamp, long frameNumber)
             {
-                mParent.OnSurfaceTextureUpdated();
+                if (mParent.mRenderMode == ViewfinderProcessor.ModeNormal) return;
 
-                if (mParent.mRenderMode == ViewfinderProcessor.ModeNormal)
-                {
-                    mParent.mCameraControl.SetExposureCompensationIndex(mParent.mAutoExposure);
-                }
-                else if ((frameNumber & 1) == 0)
+                if ((frameNumber & 1) == 0)
                 {
                     mParent.mCameraControl.SetExposureCompensationIndex(mParent.mOddExposure);
                 }
@@ -494,6 +488,11 @@ namespace HdrViewfinder
                     mParent.mEvenExposureText.Enabled = false;
                     mParent.mOddExposureText.Enabled = false;
                     mParent.mAutoExposureText.Enabled = true;
+
+                    if (exposureComp.IntValue() != mParent.mAutoExposure)
+                    {
+                        mParent.mCameraControl.SetExposureCompensationIndex(mParent.mAutoExposure);
+                    }
                 }
                 else if ((frameNumber & 1) == 0)
                 {
@@ -519,51 +518,54 @@ namespace HdrViewfinder
         //
         public void OnSurfaceRequested(SurfaceRequest request)
         {
-            Log.Info(Tag, "Resolution chosen: " + request.Resolution);
+            if (mPreviewView.Width == 0 || mPreviewView.Height == 0) return;
+
+            mPreviewSize = request.Resolution;
+            Log.Info(Tag, "Resolution chosen: " + mPreviewSize);
 
             // Configure processing
-            mProcessor = new ViewfinderProcessor(mRS, request.Resolution);
+            mProcessor = new ViewfinderProcessor(mRS, mPreviewSize);
 
             request.ProvideSurface(mProcessor.GetInputHdrSurface(), mExecutor, this);
 
-            this.mSurfaceRequest = request;
-            request.SetTransformationInfoListener(mExecutor, this);
+            mPreviewView.SurfaceProvider.OnSurfaceRequested(request);
+
+            mTextureView = mPreviewView.GetChildAt(0) as TextureView;
+            mTextureView.SurfaceTextureListener = this;
         }
 
         public void Accept(Object resultObject)
         {
             SurfaceRequest.Result result = resultObject as SurfaceRequest.Result;
-            Log.Info(Tag, "SurfaceRequest ResultCode: ", result.ResultCode);
+            Log.Info(Tag, "SurfaceRequest ResultCode: " + result.ResultCode);
         }
 
-        public void OnTransformationInfoUpdate(SurfaceRequest.TransformationInfo transformationInfo)
+        //
+        // Callbacks for ISurfaceTextureListener
+        //
+        public void OnSurfaceTextureAvailable(SurfaceTexture texture, int width, int height)
         {
-            if (!mTransformationInfoUpdated)
-            {
-                mSurfaceRequest.UpdateTransformationInfo(SurfaceRequest.TransformationInfo.Of(
-                    transformationInfo.CropRect, transformationInfo.RotationDegrees,
-                    (transformationInfo.TargetRotation - mCameraInfo.SensorRotationDegrees / 90 + 4) % 4));
-                mPreviewView.SurfaceProvider.OnSurfaceRequested(mSurfaceRequest);
+            // We configure the size of default buffer to be the size of camera preview we want.
+            texture.SetDefaultBufferSize(mPreviewSize.Height, mPreviewSize.Width);
 
-                mTransformationInfoUpdated = true;
-            }
+            mProcessor.SetOutputSurface(new Surface(texture));
         }
 
-        public void OnSurfaceTextureUpdated()
+        public void OnSurfaceTextureSizeChanged(SurfaceTexture texture, int width, int height)
+        {
+            mProcessor.SetOutputSurface(new Surface(texture));
+        }
+
+        public void OnSurfaceTextureUpdated(SurfaceTexture texture)
         {
             if (!mSurfaceTextureUpdated)
             {
-                TextureView textureView = mPreviewView.GetChildAt(0) as TextureView;
-                // We configure the size of default buffer to be the size of camera preview we want.
-                textureView.SurfaceTexture.SetDefaultBufferSize(mSurfaceRequest.Resolution.Width, mSurfaceRequest.Resolution.Height);
-                mProcessor.SetOutputSurface(new Surface(textureView.SurfaceTexture));
+                float centerX = mPreviewSize.Width / 2;
+                float centerY = mPreviewSize.Height / 2;
 
+                Matrix matrix = mTextureView.GetTransform(null);
                 if (mLensFacing == LensFacing.Front)
                 {
-                    Matrix matrix = textureView.GetTransform(null);
-                    float centerX = mSurfaceRequest.Resolution.Width / 2;
-                    float centerY = mSurfaceRequest.Resolution.Height / 2;
-
                     // SurfaceView/TextureView automatically mirrors the Surface for front camera, which
                     // needs to be compensated by mirroring the Surface around the upright direction of the
                     // output image.
@@ -584,10 +586,23 @@ namespace HdrViewfinder
                         //   +---+        +---+      +---+
                         matrix.PreScale(-1F, 1F, centerX, centerY);
                     }
-                    textureView.SetTransform(matrix);
                 }
+                if (mCameraInfo.SensorRotationDegrees == 90 ||
+                    mCameraInfo.SensorRotationDegrees == 270)
+                {
+                    float aspect = centerX / centerY;
+                    matrix.PostScale(1f / aspect, aspect, centerX, centerY);
+                }
+                matrix.PostRotate(mCameraInfo.SensorRotationDegrees, centerX, centerY);
+                mTextureView.SetTransform(matrix);
                 mSurfaceTextureUpdated = true;
             }
+        }
+
+        public bool OnSurfaceTextureDestroyed(SurfaceTexture texture)
+        {
+            mProcessor.SetOutputSurface(null);
+            return true;
         }
 
         //
