@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using Android;
 using Android.App;
@@ -18,6 +19,7 @@ using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Lifecycle;
 using Java.Lang;
+using Java.Nio;
 using Java.Util.Concurrent;
 using Xamarin.TensorFlow.Lite;
 using Xamarin.TensorFlow.Lite.Nnapi;
@@ -25,6 +27,7 @@ using Org.Tensorflow.Lite.Support.Common.Ops;
 using Org.Tensorflow.Lite.Support.Image;
 using Org.Tensorflow.Lite.Support.Image.Ops;
 using Org.Tensorflow.Lite.Support.Common;
+using Org.Tensorflow.Lite.Support.Metadata;
 using Camera.Utils;
 
 namespace CameraXTfLite
@@ -68,14 +71,17 @@ namespace CameraXTfLite
 
             FindViewById(Resource.Id.camera_capture_button).SetOnClickListener(this);
 
-            tflite = new Interpreter(FileUtil.LoadMappedFile(this, ModelPath),
+            ByteBuffer tfliteModel = FileUtil.LoadMappedFile(this, ModelPath);
+            MetadataExtractor metadataExtractor = new MetadataExtractor(tfliteModel);
+            tflite = new Interpreter(tfliteModel,
                 new Interpreter.Options().AddDelegate(new NnApiDelegate()));
 
+            Stream labelFile = metadataExtractor.GetAssociatedFile("labelmap.txt");
             detector = new ObjectDetectionHelper(tflite,
-                FileUtil.LoadLabels(this, LabelsPath));
+                FileUtil.LoadLabels(labelFile));
 
             var inputIndex = 0;
-            var inputShape = tflite.GetInputTensor(inputIndex).Shape();
+            var inputShape = metadataExtractor.GetInputTensorShape(inputIndex);
             tfInputSize = new Size(inputShape[2], inputShape[1]); // Order of axis is: {1, height, width, 3}
         }
 
@@ -325,7 +331,6 @@ namespace CameraXTfLite
         private string Tag = typeof(CameraActivity).Name;
 
         private const float AccuracyThreshold = 0.5f;
-        private const string ModelPath = "coco_ssd_mobilenet_v1_1.0_quant.tflite";
-        private const string LabelsPath = "coco_ssd_mobilenet_v1_1.0_labels.txt";
+        private const string ModelPath = "ssd_mobilenet_v1_1_metadata_1.tflite";
     }
 }
