@@ -60,10 +60,7 @@ namespace CameraXTfLite
                         locations[0][i][1], locations[0][i][0],
                         locations[0][i][3], locations[0][i][2]),
 
-                    // SSD Mobilenet V1 Model assumes class 0 is background class
-                    // in label file and class labels start from 1 to number_of_classes + 1,
-                    // while outputClasses correspond to class index from 0 to number_of_classes
-                    Label = labels[1 + (int) labelIndices[0][i]],
+                    Label = labels[(int) labelIndices[0][i]],
 
                     // Score is a single value of [0, 1]
                     Score = scores[0][i]

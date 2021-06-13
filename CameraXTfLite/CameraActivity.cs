@@ -331,6 +331,6 @@ namespace CameraXTfLite
         private string Tag = typeof(CameraActivity).Name;
 
         private const float AccuracyThreshold = 0.5f;
-        private const string ModelPath = "ssd_mobilenet_v1_1_metadata_1.tflite";
+        private const string ModelPath = "lite-model_ssd_mobilenet_v1_1_metadata_2.tflite";
     }
 }

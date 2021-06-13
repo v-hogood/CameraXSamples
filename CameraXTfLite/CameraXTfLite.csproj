@@ -144,7 +144,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <AndroidAsset Include="Assets\ssd_mobilenet_v1_1_metadata_1.tflite" />
+    <AndroidAsset Include="Assets\lite-model_ssd_mobilenet_v1_1_metadata_2.tflite" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
