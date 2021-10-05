@@ -635,19 +635,4 @@ namespace HdrViewfinder
             return errorMessage;
         }
     }
-
-    public static class Extension
-    {
-        static System.IntPtr class_ref = JNIEnv.FindClass("androidx/camera/core/SurfaceRequest");
-        static System.IntPtr id_provideSurface;
-        public static void ProvideSurface(this SurfaceRequest request, Surface surface, IExecutor executor, IConsumer resultListener)
-        {
-            if (id_provideSurface == System.IntPtr.Zero)
-                id_provideSurface = JNIEnv.GetMethodID(class_ref,
-                    "provideSurface", "(Landroid/view/Surface;Ljava/util/concurrent/Executor;Landroidx/core/util/Consumer;)V");
-
-            JNIEnv.CallVoidMethod(((IJavaObject)request).Handle, id_provideSurface,
-                new JValue(surface), new JValue(executor), new JValue(resultListener));
-        }
-    }
 }
