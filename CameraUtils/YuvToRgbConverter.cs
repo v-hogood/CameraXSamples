@@ -201,16 +201,15 @@ namespace Camera.Utils
                         imageCrop.Left / 2,
                         imageCrop.Top / 2,
                         imageCrop.Right / 2,
-                        imageCrop.Bottom / 2
-                    );
+                        imageCrop.Bottom / 2);
 
                 var planeWidth = planeCrop.Width();
                 var planeHeight = planeCrop.Height();
 
                 if (rowStride == planeWidth * outputStride && pixelStride == outputStride)
                 {
-                    // When the plane strides match the output strides,
-                    // we can just copy the entire plane in a single step
+                    // When there is a single stride value for pixel and output, we can just copy
+                    // the entire plane in a single step
                     if (uvInterleaved && planeIndex == 2)
                     {
                         // Copy the plane
@@ -219,7 +218,7 @@ namespace Camera.Utils
                     else
                     {
                         // Move buffer position to the beginning of this plane
-                        var planePtr = planeBuffer.GetDirectBufferAddress() + planeCrop.Top * rowStride;
+                        var planePtr = planeBuffer.GetDirectBufferAddress() + (planeCrop.Top * rowStride);
 
                         // Copy the plane
                         Marshal.Copy(planePtr, outputBuffer, outputOffset, rowStride * planeHeight);
@@ -238,6 +237,7 @@ namespace Camera.Utils
                     planeWidth :
                     (pixelStride == 2 && outputStride == 2 && (vuInterleaved || uvInterleaved) ?
                     planeWidth * 2 :
+
                     // Take into account that the stride may include data from pixels other than this
                     // particular plane and row, and that could be between pixels and not after every
                     // pixel:
@@ -246,13 +246,13 @@ namespace Camera.Utils
                     // | Pixel 1 | Other Data | Pixel 2 | Other Data | ... | Pixel N |
                     //
                     // We need to get (N-1) * (pixel stride bytes) per row + 1 byte for the last pixel
-                    (planeWidth - 1) * pixelStride + 1);
+                    ((planeWidth - 1) * pixelStride) + 1);
 
                 for (int row = 0; row < planeHeight; row++)
                 {
                     // Move buffer position to the beginning of this row
                     var rowPtr = planeBuffer.GetDirectBufferAddress() +
-                        (row + planeCrop.Top) * rowStride + planeCrop.Left * pixelStride;
+                        ((row + planeCrop.Top) * rowStride) + (planeCrop.Left * pixelStride);
 
                     if (pixelStride == outputStride)
                     {
