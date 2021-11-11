@@ -138,12 +138,6 @@
     <PackageReference Include="Xamarin.TensorFlow.Lite.Support.Metadata" Version="0.2.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="CameraUtils\CameraUtils.csproj">
-      <Project>{320822AF-9F5C-484C-A07D-9F2C3E9D7034}</Project>
-      <Name>CameraUtils</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <AndroidAsset Include="Assets\lite-model_ssd_mobilenet_v1_1_metadata_2.tflite" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />

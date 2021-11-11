@@ -28,7 +28,6 @@ using Org.Tensorflow.Lite.Support.Image;
 using Org.Tensorflow.Lite.Support.Image.Ops;
 using Org.Tensorflow.Lite.Support.Common;
 using Org.Tensorflow.Lite.Support.Metadata;
-using Camera.Utils;
 
 namespace CameraXTfLite
 {
@@ -36,6 +35,7 @@ namespace CameraXTfLite
     [Activity(Name = "com.android.example.camerax.tflite.CameraActivity", Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class CameraActivity : AppCompatActivity,
         View.IOnClickListener,
+        PixelCopy.IOnPixelCopyFinishedListener,
         ImageAnalysis.IAnalyzer
     {
         private ConstraintLayout container;
@@ -53,11 +53,13 @@ namespace CameraXTfLite
         private TensorImage tfImageBuffer = new TensorImage(Xamarin.TensorFlow.Lite.DataType.Uint8);
 
         private ImageProcessor tfImageProcessor;
+        // nnAPiDelegate must be released by explicitly calling its close() function.
+        //     https://github.com/android/camera-samples/issues/417
+        private NnApiDelegate nnApiDelegate;
         private Interpreter tflite;
         private ObjectDetectionHelper detector;
         private Size tfInputSize;
 
-        private YuvToRgbConverter converter;
         private int frameCounter;
         private long lastFpsTimestamp;
         private PreviewView viewFinder;
@@ -72,10 +74,11 @@ namespace CameraXTfLite
             FindViewById(Resource.Id.camera_capture_button).SetOnClickListener(this);
 
             ByteBuffer tfliteModel = FileUtil.LoadMappedFile(this, ModelPath);
-            MetadataExtractor metadataExtractor = new MetadataExtractor(tfliteModel);
+            nnApiDelegate = new NnApiDelegate();
             tflite = new Interpreter(tfliteModel,
-                new Interpreter.Options().AddDelegate(new NnApiDelegate()));
+                new Interpreter.Options().AddDelegate(nnApiDelegate));
 
+            MetadataExtractor metadataExtractor = new MetadataExtractor(tfliteModel);
             Stream labelFile = metadataExtractor.GetAssociatedFile("labelmap.txt");
             detector = new ObjectDetectionHelper(tflite,
                 FileUtil.LoadLabels(labelFile));
@@ -83,6 +86,12 @@ namespace CameraXTfLite
             var inputIndex = 0;
             var inputShape = metadataExtractor.GetInputTensorShape(inputIndex);
             tfInputSize = new Size(inputShape[2], inputShape[1]); // Order of axis is: {1, height, width, 3}
+        }
+
+        protected override void OnDestroy()
+        {
+            nnApiDelegate?.Close();
+            base.OnDestroy();
         }
 
         public void OnClick(View v)
@@ -104,7 +113,8 @@ namespace CameraXTfLite
                 {
                     // Otherwise, pause image analysis and freeze image
                     pauseAnalysis = true;
-                    var matrix = ExifUtils.DecodeExifOrientation(ExifUtils.ComputeExifOrientation(imageRotationDegrees, isFrontFacing()));
+                    var matrix = new Matrix();
+                    matrix.PostRotate((float)imageRotationDegrees);
                     var uprightImage = Bitmap.CreateBitmap(
                         bitmapBuffer, 0, 0, bitmapBuffer.Width, bitmapBuffer.Height, matrix, false);
                     imagePredicted.SetImageBitmap(uprightImage);
@@ -143,7 +153,6 @@ namespace CameraXTfLite
 
                     frameCounter = 0;
                     lastFpsTimestamp = JavaSystem.CurrentTimeMillis();
-                    converter = new YuvToRgbConverter(this);
 
                     imageAnalysis.SetAnalyzer(executor, this);
 
@@ -162,15 +171,30 @@ namespace CameraXTfLite
             });
         }
 
+        public void OnPixelCopyFinished(int copyResult)
+        {
+            if (copyResult != (int)PixelCopyResult.Success)
+            {
+                Log.Error(Tag,"OnPixelCopyFinished() failed with error " + copyResult);
+            }
+        }
+
         public void Analyze(IImageProxy image)
         {
             if (bitmapBuffer == null)
             {
                 // The image rotation and RGB image buffer are initialized only once
                 // the analyzer has started running
-                imageRotationDegrees = image.ImageInfo.RotationDegrees;
+                imageRotationDegrees = viewFinder.Display.Rotation switch
+                {
+                    SurfaceOrientation.Rotation0 => 0,
+                    SurfaceOrientation.Rotation90 => 270,
+                    SurfaceOrientation.Rotation180 => 180,
+                    SurfaceOrientation.Rotation270 => 90,
+                    _ => 0
+                };
                 bitmapBuffer = Bitmap.CreateBitmap(
-                    image.Width, image.Height, Bitmap.Config.Argb8888);
+                    image.Height, image.Width, Bitmap.Config.Argb8888);
 
                 var cropSize = Math.Min(bitmapBuffer.Width, bitmapBuffer.Height);
                 tfImageProcessor = new ImageProcessor.Builder()
@@ -189,8 +213,17 @@ namespace CameraXTfLite
                 return;
             }
 
-            // Convert the image to RGB and place it in our shared buffer
-            converter.YuvToRgb(image.Image, bitmapBuffer);
+            // Copy out RGB bits to our shared buffer
+            SurfaceView surfaceView = viewFinder.GetChildAt(0) as SurfaceView;
+            TextureView textureView = viewFinder.GetChildAt(0) as TextureView;
+            if (surfaceView != null && surfaceView.Holder.Surface != null && surfaceView.Holder.Surface.IsValid)
+            {
+                PixelCopy.Request(surfaceView, bitmapBuffer, this, surfaceView.Handler);
+            }
+            else if (textureView != null && textureView.IsAvailable)
+            {
+                textureView.GetBitmap(bitmapBuffer);
+            }
             image.Close();
 
             // Process the image in Tensorflow
@@ -201,7 +234,7 @@ namespace CameraXTfLite
             var predictions = detector.Predict(tfImage);
 
             // Report only the top prediction
-            ReportPrediction(predictions.OrderBy(p => p.Score).Last());
+            ReportPrediction(predictions.OrderBy(p => p.Score).LastOrDefault());
 
             // Compute the FPS of the entire pipeline
             var frameCount = 10;
@@ -211,7 +244,7 @@ namespace CameraXTfLite
                 var now = JavaSystem.CurrentTimeMillis();
                 var delta = now - lastFpsTimestamp;
                 var fps = 1000 * (float) frameCount / delta;
-                Log.Debug(Tag, "FPS: " + fps.ToString("0.00"));
+                Log.Debug(Tag, "FPS: " + fps.ToString("0.00") + " with tensorSize: " + tfImage.Width + " x " + tfImage.Height);
                 lastFpsTimestamp = now;
             }
         }
