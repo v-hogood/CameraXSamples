@@ -311,7 +311,7 @@ namespace CameraXBasic.Fragments
             }
         }
 
-        // [androidx.camera.core.ImageAnalysisConfig] requires enum value of
+        // [androidx.camera.core.ImageAnalysis.Builder] requires enum value of
         // [androidx.camera.core.AspectRatio]. Currently it has values of 4:3 & 16:9.
         //
         //  Detecting the most suitable ratio for dimensions provided in @params by counting absolute
