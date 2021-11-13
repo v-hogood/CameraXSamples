@@ -6,6 +6,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
+using AndroidX.Core.View;
 using AndroidX.LocalBroadcastManager.Content;
 
 namespace CameraXBasic
@@ -37,8 +38,7 @@ namespace CameraXBasic
 
             // Before setting full screen flags, we must wait a bit to let UI settle; otherwise, we may
             // be trying to set app to immersive mode before it's ready and the flags do not stick
-            container.PostDelayed(() => container.SystemUiVisibility =
-                (Android.Views.StatusBarVisibility) Android.Views.SystemUiFlags.Fullscreen,
+            container.PostDelayed(() => HideSystemUI(),
                 ImmersiveFlagTimeout);
         }
 
@@ -87,6 +87,14 @@ namespace CameraXBasic
             mediaDir?.Mkdirs();
             return mediaDir != null && mediaDir.Exists() ?
                 mediaDir : appContext.FilesDir;
+        }
+
+        private void HideSystemUI()
+        {
+            WindowCompat.SetDecorFitsSystemWindows(Window, false);
+            WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(Window, container);
+            controller.Hide(WindowInsetsCompat.Type.SystemBars());
+            controller.SystemBarsBehavior = WindowInsetsControllerCompat.BehaviorShowTransientBarsBySwipe;
         }
     }
 }
