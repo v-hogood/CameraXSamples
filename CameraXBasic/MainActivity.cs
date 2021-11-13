@@ -58,6 +58,20 @@ namespace CameraXBasic
             }
         }
 
+        public override void OnBackPressed()
+        {
+            if (Build.VERSION.SdkInt == BuildVersionCodes.P)
+            {
+                // Workaround for Android Q memory leak issue in IRequestFinishCallback$Stub.
+                // (https://issuetracker.google.com/issues/139738913)
+                FinishAfterTransition();
+            }
+            else
+            {
+                base.OnBackPressed();
+            }
+        }
+
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
