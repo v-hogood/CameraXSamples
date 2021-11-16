@@ -21,6 +21,7 @@ using AndroidX.Fragment.App;
 using AndroidX.Lifecycle;
 using AndroidX.LocalBroadcastManager.Content;
 using AndroidX.Navigation;
+using AndroidX.Window.Layout;
 using Bumptech.Glide;
 using Bumptech.Glide.Request;
 using CameraXBasic.Utils;
@@ -54,6 +55,7 @@ namespace CameraXBasic.Fragments
         private ImageAnalysis imageAnalyzer;
         private ICamera camera;
         private ProcessCameraProvider cameraProvider;
+        private IWindowMetricsCalculator windowMetricsCalculator;
 
         private DisplayManager displayManager => RequireContext().GetSystemService(Context.DisplayService) as DisplayManager;
 
@@ -175,6 +177,9 @@ namespace CameraXBasic.Fragments
             // Every time the orientation of device changes, update rotation for use cases
             displayManager.RegisterDisplayListener(this, null);
 
+            // Initialize WindowManager to retrieve display metrics
+            windowMetricsCalculator = WindowMetricsCalculator.Companion.OrCreate;
+
             // Determine the output directory
             outputDirectory = MainActivity.GetOutputDirectory(RequireContext());
 
@@ -202,8 +207,8 @@ namespace CameraXBasic.Fragments
         {
             base.OnConfigurationChanged(newConfig);
 
-            // Redraw the camera UI controls
-            UpdateCameraUi();
+            // Rebind the camera with the updated display metrics
+            BindCameraUseCases();
 
             // Enable or disable switching between cameras
             UpdateCameraSwitchButton();
@@ -238,11 +243,10 @@ namespace CameraXBasic.Fragments
         private void BindCameraUseCases()
         {
             // Get screen metrics used to setup camera for full screen resolution
-            var metrics = new DisplayMetrics();
-            viewFinder.Display.GetRealMetrics(metrics);
+            var metrics = windowMetricsCalculator.ComputeCurrentWindowMetrics(RequireActivity()).Bounds;
             Log.Debug(Tag, "Screen metrics: " + metrics);
 
-            var screenAspectRatio = AspectRatio(metrics.WidthPixels, metrics.HeightPixels);
+            var screenAspectRatio = AspectRatio(metrics.Width(), metrics.Height());
             Log.Debug(Tag, "Preview aspect ratio: " + screenAspectRatio);
 
             var rotation = viewFinder.Display.Rotation;

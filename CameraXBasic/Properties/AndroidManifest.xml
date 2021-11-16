@@ -7,7 +7,7 @@
 	<!-- Declare permissions -->
 	<uses-permission android:name="android.permission.CAMERA" />
 	<application android:name=".MainApplication" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:label="@string/app_name" android:allowBackup="true" tools:ignore="AllowBackup" android:theme="@style/AppTheme">
-		<activity android:name="com.android.example.cameraxbasic.MainActivity" android:clearTaskOnLaunch="true" android:theme="@style/AppTheme" android:icon="@mipmap/ic_launcher" android:screenOrientation="fullUser" android:rotationAnimation="seamless" tools:targetApi="O">
+		<activity android:name="com.android.example.cameraxbasic.MainActivity" android:clearTaskOnLaunch="true" android:theme="@style/AppTheme" android:icon="@mipmap/ic_launcher" android:screenOrientation="fullUser" android:rotationAnimation="seamless" android:resizeableActivity="true" android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize" tools:targetApi="O">
 			<!-- Main app intent filter -->
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
