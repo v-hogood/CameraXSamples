@@ -134,8 +134,8 @@
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.4.0.4" />
     <PackageReference Include="Xamarin.Google.FlatBuffers" Version="1.12.0" />
     <PackageReference Include="Xamarin.TensorFlow.Lite" Version="2.5.0.1" />
-    <PackageReference Include="Xamarin.TensorFlow.Lite.Support" Version="0.3.0" />
-    <PackageReference Include="Xamarin.TensorFlow.Lite.Support.Metadata" Version="0.3.0" />
+    <PackageReference Include="Xamarin.TensorFlow.Lite.Support" Version="0.3.1" />
+    <PackageReference Include="Xamarin.TensorFlow.Lite.Support.Metadata" Version="0.3.1" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\lite-model_ssd_mobilenet_v1_1_metadata_2.tflite" />
