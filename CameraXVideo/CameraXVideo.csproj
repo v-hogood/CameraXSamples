@@ -96,6 +96,9 @@
     <AndroidResource Include="Resources\layout\fragment_video_viewer.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\video_quality_item.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
     <AndroidResource Include="Resources\values\attrs.xml" />
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\ids.xml" />
@@ -114,6 +117,7 @@
     <AndroidResource Include="Resources\drawable\ic_start.xml" />
     <AndroidResource Include="Resources\drawable\ic_stop.xml" />
     <AndroidResource Include="Resources\drawable\ic_switch.xml" />
+    <AndroidResource Include="Resources\drawable\selector_background.xml" />
     <AndroidResource Include="Resources\navigation\nav_graph.xml" />
     <AndroidResource Include="Resources\xml\file_paths.xml" />
   </ItemGroup>
