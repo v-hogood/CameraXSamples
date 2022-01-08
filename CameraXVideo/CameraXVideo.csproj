@@ -70,7 +70,9 @@
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.4.0.4" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Fragments\CameraFragment.cs" />
+    <Compile Include="Extensions\VideoQualityExt.cs" />
+    <Compile Include="Extensions\VideoRecordEventExt.cs" />
+    <Compile Include="Fragments\CaptureFragment.cs" />
     <Compile Include="Fragments\PermissionsFragment.cs" />
     <Compile Include="Fragments\VideoViewerFragment.cs" />
     <Compile Include="MainActivity.cs" />
@@ -87,7 +89,7 @@
     <AndroidResource Include="Resources\layout\activity_main.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
-    <AndroidResource Include="Resources\layout\fragment_camera.xml">
+    <AndroidResource Include="Resources\layout\fragment_capture.xml">
       <SubType>Designer</SubType>
     </AndroidResource>
     <AndroidResource Include="Resources\layout\fragment_permission.xml">
