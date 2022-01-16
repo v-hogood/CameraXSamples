@@ -63,6 +63,8 @@ namespace CameraXTfLite
         private int frameCounter;
         private long lastFpsTimestamp;
         private PreviewView viewFinder;
+        private SurfaceView surfaceView;
+        private TextureView textureView;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -167,6 +169,14 @@ namespace CameraXTfLite
                     // Use the camera object to link our preview use case with the view
                     preview.SetSurfaceProvider(viewFinder.SurfaceProvider);
 
+                    OnPreviewSizeChosen(preview.AttachedSurfaceResolution);
+
+                    viewFinder.Post(() =>
+                    {
+                        surfaceView = viewFinder.GetChildAt(0) as SurfaceView;
+                        textureView = viewFinder.GetChildAt(0) as TextureView;
+                    });
+
                 }), ContextCompat.GetMainExecutor(this));
             });
         }
@@ -179,43 +189,40 @@ namespace CameraXTfLite
             }
         }
 
+        private void OnPreviewSizeChosen(Size size)
+        {
+            imageRotationDegrees = viewFinder.Display.Rotation switch
+            {
+                SurfaceOrientation.Rotation0 => 0,
+                SurfaceOrientation.Rotation90 => 270,
+                SurfaceOrientation.Rotation180 => 180,
+                SurfaceOrientation.Rotation270 => 90,
+                _ => 0
+            };
+            bitmapBuffer = Bitmap.CreateBitmap(
+                size.Height, size.Width, Bitmap.Config.Argb8888);
+
+            var cropSize = Math.Min(bitmapBuffer.Width, bitmapBuffer.Height);
+            tfImageProcessor = new ImageProcessor.Builder()
+                .Add(new ResizeWithCropOrPadOp(cropSize, cropSize))
+                .Add(new ResizeOp(
+                    tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.Bilinear))
+                .Add(new Rot90Op(-imageRotationDegrees / 90))
+                .Add(new NormalizeOp(0f, 1f))
+                .Build();
+        }
+
         public void Analyze(IImageProxy image)
         {
-            if (bitmapBuffer == null)
-            {
-                // The image rotation and RGB image buffer are initialized only once
-                // the analyzer has started running
-                imageRotationDegrees = viewFinder.Display.Rotation switch
-                {
-                    SurfaceOrientation.Rotation0 => 0,
-                    SurfaceOrientation.Rotation90 => 270,
-                    SurfaceOrientation.Rotation180 => 180,
-                    SurfaceOrientation.Rotation270 => 90,
-                    _ => 0
-                };
-                bitmapBuffer = Bitmap.CreateBitmap(
-                    image.Height, image.Width, Bitmap.Config.Argb8888);
-
-                var cropSize = Math.Min(bitmapBuffer.Width, bitmapBuffer.Height);
-                tfImageProcessor = new ImageProcessor.Builder()
-                    .Add(new ResizeWithCropOrPadOp(cropSize, cropSize))
-                    .Add(new ResizeOp(
-                        tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.Bilinear))
-                    .Add(new Rot90Op(-imageRotationDegrees / 90))
-                    .Add(new NormalizeOp(0f, 1f))
-                    .Build();
-            }
+            image.Close();
 
             // Early exit: image analysis is in paused state
             if (pauseAnalysis)
             {
-                image.Close();
                 return;
             }
 
             // Copy out RGB bits to our shared buffer
-            SurfaceView surfaceView = viewFinder.GetChildAt(0) as SurfaceView;
-            TextureView textureView = viewFinder.GetChildAt(0) as TextureView;
             if (surfaceView != null && surfaceView.Holder.Surface != null && surfaceView.Holder.Surface.IsValid)
             {
                 PixelCopy.Request(surfaceView, bitmapBuffer, this, surfaceView.Handler);
@@ -224,7 +231,6 @@ namespace CameraXTfLite
             {
                 textureView.GetBitmap(bitmapBuffer);
             }
-            image.Close();
 
             // Process the image in Tensorflow
             tfImageBuffer.Load(bitmapBuffer);
@@ -277,7 +283,6 @@ namespace CameraXTfLite
                     Math.Min(viewFinder.Width, (int) location.Right - (int) location.Left);
                 layoutParams.Height =
                     Math.Min(viewFinder.Height, (int) location.Bottom - (int) location.Top);
-                boxPrediction.LayoutParameters = layoutParams;
 
                 // Make sure all UI elements are visible
                 boxPrediction.Visibility = ViewStates.Visible;
