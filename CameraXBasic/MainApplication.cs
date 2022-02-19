@@ -8,8 +8,8 @@ using AndroidX.Camera.Core;
 namespace CameraXBasic
 {
     // Set CameraX logging level to Log.ERROR to avoid excessive logcat messages.
-    //  Refer to https://developer.android.com/reference/androidx/camera/core/CameraXConfig.Builder#setMinimumLoggingLevel(int)
-    //  for details.
+    // Refer to https://developer.android.com/reference/androidx/camera/core/CameraXConfig.Builder#setMinimumLoggingLevel(int)
+    // for details.
     [Application(Name = "com.android.example.cameraxbasic.MainApplication")]
     class MainApplication : Application, CameraXConfig.IProvider
     {

@@ -221,7 +221,7 @@ namespace CameraXBasic.Fragments
             cameraProviderFuture.AddListener(new Java.Lang.Runnable(() =>
             {
                 // CameraProvider
-                cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider; ;
+                cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider;
 
                 // Select lensFacing depending on the available cameras
                 if (HasBackCamera())
