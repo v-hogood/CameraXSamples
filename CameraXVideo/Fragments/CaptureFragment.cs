@@ -73,7 +73,6 @@ namespace CameraXVideo
             var cameraProviderFuture = ProcessCameraProvider.GetInstance(RequireContext());
             cameraProviderFuture.AddListener(new Runnable(() =>
             {
-                // Camera provider is now guaranteed to be available
                 var cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider;
 
                 var cameraSelector = GetCameraSelector(cameraIndex);
@@ -120,7 +119,7 @@ namespace CameraXVideo
                 }
 
                 EnableUI(true);
-            }));
+            }), mainThreadExecutor);
         }
 
         //
@@ -197,7 +196,7 @@ namespace CameraXVideo
             return (cameraCapabilities[idx % cameraCapabilities.Count].CamSelector);
         }
 
-        public struct CameraCapability { public CameraSelector CamSelector; public List<Quality> Qualities; };
+        struct CameraCapability { public CameraSelector CamSelector; public List<Quality> Qualities; };
         //
         // Query and cache this platform's camera capabilities, run only once.
         //
