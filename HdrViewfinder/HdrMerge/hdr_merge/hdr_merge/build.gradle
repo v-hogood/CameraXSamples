@@ -3,24 +3,17 @@ plugins {
 }
 
 android {
-    buildToolsVersion "29.0.3"
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion 31
     }
 
     buildTypes {
         release {
             minifyEnabled false
         }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
