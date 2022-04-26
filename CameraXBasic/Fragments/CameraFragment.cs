@@ -25,6 +25,7 @@ using AndroidX.Window.Layout;
 using Bumptech.Glide;
 using Bumptech.Glide.Request;
 using CameraXBasic.Utils;
+using Java.Lang;
 
 // Helper type alias used for analysis use case callbacks
 delegate void LumaListener(double luma);
@@ -37,6 +38,7 @@ namespace CameraXBasic.Fragments
     // - Image analysis
     [Android.App.Activity(Name = "com.android.example.cameraxbasic.fragments.CameraFragment")]
     public class CameraFragment : Fragment,
+        IObserver,
         DisplayManager.IDisplayListener,
         View.IOnClickListener,
         MediaScannerConnection.IOnScanCompletedListener,
@@ -308,10 +310,116 @@ namespace CameraXBasic.Fragments
 
                 // Attach the viewfinder's surface provider to preview use case
                 preview?.SetSurfaceProvider(viewFinder.SurfaceProvider);
+                ObserveCameraState(camera?.CameraInfo);
             }
             catch (Java.Lang.Exception exc)
             {
                 Log.Error(Tag, "Use case binding failed: " + exc);
+            }
+        }
+
+        private void ObserveCameraState(ICameraInfo cameraInfo)
+        {
+            cameraInfo.CameraState.Observe(
+                ViewLifecycleOwner, this);
+        }
+
+        public void OnChanged(Object p0)
+        {
+            var cameraState = p0 as CameraState;
+
+            if (cameraState.GetType() == CameraState.Type.PendingOpen)
+            {
+                // Ask the user to close other camera apps
+                Toast.MakeText(Context,
+                    "CameraState: Pending Open",
+                    ToastLength.Short).Show();
+            }
+            else if (cameraState.GetType() == CameraState.Type.Opening)
+            {
+                // Show the Camera UI
+                Toast.MakeText(Context,
+                    "CameraState: Opening",
+                    ToastLength.Short).Show();
+            }
+            else if (cameraState.GetType() == CameraState.Type.Open)
+            {
+                // Setup Camera resources and begin processing
+                Toast.MakeText(Context,
+                    "CameraState: Open",
+                    ToastLength.Short).Show();
+            }
+            else if (cameraState.GetType() == CameraState.Type.Closing)
+            {
+                // Close camera UI
+                Toast.MakeText(Context,
+                    "CameraState: Closing",
+                    ToastLength.Short).Show();
+            }
+            else if (cameraState.GetType() == CameraState.Type.Closed)
+            {
+                // Free camera resources
+                Toast.MakeText(Context,
+                    "CameraState: Closed",
+                    ToastLength.Short).Show();
+            }
+
+            if (cameraState.Error != null)
+            {
+                // Open errors
+                if (cameraState.Error.Code == CameraState.ErrorStreamConfig)
+                {
+                    // Make sure to setup the use cases properly
+                    Toast.MakeText(Context,
+                        "Stream config error",
+                        ToastLength.Short).Show();
+                }
+                // Opening errors
+                else if (cameraState.Error.Code == CameraState.ErrorCameraInUse)
+                {
+                    // Close the camera or ask user to close another camera app that's using the
+                    // camera
+                    Toast.MakeText(Context,
+                        "Camera in use",
+                        ToastLength.Short).Show();
+                }
+                else if (cameraState.Error.Code == CameraState.ErrorMaxCamerasInUse)
+                {
+                    // Close another open camera in the app, or ask the user to close another
+                    // camera app that's using the camera
+                    Toast.MakeText(Context,
+                        "Max cameras in use",
+                        ToastLength.Short).Show();
+                }
+                else if (cameraState.Error.Code == CameraState.ErrorOtherRecoverableError)
+                {
+                    Toast.MakeText(Context,
+                        "Other recoverable error",
+                        ToastLength.Short).Show();
+                }
+                // Closing errors
+                else if (cameraState.Error.Code == CameraState.ErrorCameraDisabled)
+                {
+                    // Ask the user to enable the device's cameras
+                    Toast.MakeText(Context,
+                        "Camera disabled",
+                        ToastLength.Short).Show();
+                }
+                else if (cameraState.Error.Code == CameraState.ErrorCameraFatalError)
+                {
+                    // Ask the user to reboot the device to restore camera function
+                    Toast.MakeText(Context,
+                        "Fatal error",
+                        ToastLength.Short).Show();
+                }
+                // Closed errors
+                else if (cameraState.Error.Code == CameraState.ErrorDoNotDisturbModeEnabled)
+                {
+                    // Ask the user to disable the "Do Not Disturb" mode, then reopen the camera
+                    Toast.MakeText(Context,
+                        "Do not disturb mode enabled",
+                        ToastLength.Short).Show();
+                }
             }
         }
 
