@@ -23,7 +23,7 @@
 
     <fragment
         android:id="@+id/permissions_fragment"
-        android:name="com.example.android.camerax.video.fragments.PermissionsFragment"
+        android:name="com.android.example.cameraxvideo.fragments.PermissionsFragment"
         android:label="Permissions" >
 
         <action
@@ -34,7 +34,7 @@
 
     <fragment
         android:id="@+id/capture_fragment"
-        android:name="com.example.android.camerax.video.fragments.CaptureFragment"
+        android:name="com.android.example.cameraxvideo.fragments.CaptureFragment"
         android:label="Capture" >
 
         <action
@@ -47,7 +47,7 @@
 
     <fragment
         android:id="@+id/video_viewer"
-        android:name="com.example.android.camerax.video.fragments.VideoViewerFragment"
+        android:name="com.android.example.cameraxvideo.fragments.VideoViewerFragment"
         android:label="fragment_video_viewer"
         tools:layout="@layout/fragment_video_viewer" >
         <argument

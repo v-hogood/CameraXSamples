@@ -1,3 +1,4 @@
+using AndroidX.Camera.Video;
 using Java.Lang;
 
 namespace CameraXVideo

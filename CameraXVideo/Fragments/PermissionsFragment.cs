@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using Android;
 using Android.Content;
@@ -13,19 +12,25 @@ using AndroidX.Core.Content;
 using AndroidX.Fragment.App;
 using AndroidX.Navigation;
 using Java.Lang;
+using Java.Util;
+using Java.Util.Functions;
 
 namespace CameraXVideo
 {
     //
     // This [Fragment] requests permissions and, once granted, it will navigate to the next fragment
     //
+    [Android.App.Activity(Name = "com.android.example.cameraxvideo.fragments.PermissionsFragment")]
     class PermissionsFragment : Fragment,
         View.IOnClickListener,
-        IActivityResultCallback
+        IActivityResultCallback,
+        IBiConsumer
     {
-        private static string[] PermissionsRequired = new string[] {
+        private string[] PermissionsRequired = new string[] {
             Manifest.Permission.Camera,
             Manifest.Permission.RecordAudio };
+
+        private ActivityResultLauncher activityResultLauncher;
 
         public override void OnCreate(Bundle savedInstanceState)
         {
@@ -54,7 +59,7 @@ namespace CameraXVideo
             Bundle savedInstanceState
         )
         {
-            View view = inflater.Inflate(Resource.Id.permission_container, container);
+            View view = inflater.Inflate(Resource.Layout.fragment_permission, container, false);
             view.SetOnClickListener(this);
             return view;
         }
@@ -75,27 +80,29 @@ namespace CameraXVideo
         }
 
         // Convenience method used to check if all permissions required by this app are granted */
-        private static bool HasPermissions(Context context)
+        private bool HasPermissions(Context context)
         {
             return PermissionsRequired.All(it => ContextCompat.CheckSelfPermission(context, it) == Permission.Granted);
         }
 
+        private bool permissionGranted;
+
         public void OnActivityResult(Object result)
         {
-            var permissions = (IDictionary<string, bool>)result;
+            var permissions = result as IMap;
 
             // Handle Permission granted/rejected
-            var permissionGranted = true;
-            foreach (var it in permissions)
-            {
-                if (PermissionsRequired.Contains(it.Key) && it.Value == false)
-                    permissionGranted = false;
-            }
+            permissionGranted = true;
+            permissions.ForEach(this);
 
             if (!permissionGranted)
                 Toast.MakeText(Context, "Permission request denied", ToastLength.Long).Show();
         }
 
-        private ActivityResultLauncher activityResultLauncher;
+        public void Accept(Object t, Object u)
+        {
+            if (PermissionsRequired.Contains((string)t) && (bool)u == false)
+                permissionGranted = false;
+        }
     }
 }

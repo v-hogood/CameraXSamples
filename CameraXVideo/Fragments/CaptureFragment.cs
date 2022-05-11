@@ -1,7 +1,20 @@
+//
+// Simple app to demonstrate CameraX Video capturing with Recorder ( to local files ), with the
+// following simple control follow:
+//   - user starts capture.
+//   - this app disables all UI selections.
+//   - this app enables capture run-time UI (pause/resume/stop).
+//   - user controls recording with run-time UI, eventually tap "stop" to end.
+//   - this app informs CameraX recording to stop with recording.stop() (or recording.close()).
+//   - CameraX notify this app that the recording is indeed stopped, with the Finalize event.
+//   - this app starts VideoViewer fragment to view the captured result.
+//
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Android.Content;
 using Android.Content.Res;
+using Android.Media;
 using Android.OS;
 using Android.Provider;
 using Android.Util;
@@ -9,6 +22,7 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Lifecycle;
+using AndroidX.Camera.Video;
 using AndroidX.Camera.View;
 using AndroidX.ConstraintLayout.Widget;
 using AndroidX.Core.Content;
@@ -21,9 +35,11 @@ using Java.Lang;
 using Java.Text;
 using Java.Util;
 using Java.Util.Concurrent;
+using VideoCapture = AndroidX.Camera.Video.VideoCapture;
 
 namespace CameraXVideo
 {
+    [Android.App.Activity(Name = "com.android.example.cameraxvideo.fragments.CaptureFragment")]
     class CaptureFragment : Fragment,
         View.IOnClickListener,
         AndroidX.Lifecycle.IObserver,
@@ -37,14 +53,14 @@ namespace CameraXVideo
         private CheckBox audioSelection;
         private RecyclerView qualitySelection;
         private TextView captureStatus;
-        private MutableLiveData captureLiveStatus;
+        private MutableLiveData captureLiveStatus = new MutableLiveData();
 
         // Host's navigation controller
         private NavController navController;
 
         private List<CameraCapability> cameraCapabilities = new List<CameraCapability>();
 
-        private VideoCapture<Recorder> videoCapture;
+        private VideoCapture videoCapture;
         private Recording currentRecording;
         private VideoRecordEvent recordingState;
 
@@ -61,6 +77,7 @@ namespace CameraXVideo
         private bool audioEnabled = false;
 
         private IExecutor mainThreadExecutor;
+        private SemaphoreSlim enumerationDeferred = new SemaphoreSlim(1);
 
         // main cameraX capture functions
         //
@@ -84,11 +101,11 @@ namespace CameraXVideo
 
                 var orientation = Resources.Configuration.Orientation;
                 (previewView.LayoutParameters as ConstraintLayout.LayoutParams).
-                    DimensionRatio = quality.GetAspectRatioString(quality,
+                    DimensionRatio = quality.GetAspectRatioString(
                         (orientation == Android.Content.Res.Orientation.Portrait));
 
                 var preview = new Preview.Builder()
-                    .SetTargetAspectRatio(quality.GetAspectRatio(quality))
+                    .SetTargetAspectRatio(quality.GetAspectRatio())
                     .Build();
 
                 preview.SetSurfaceProvider(previewView.SurfaceProvider);
@@ -147,10 +164,10 @@ namespace CameraXVideo
                 .Build();
 
             // configure Recorder and Start recording to the mediaStoreOutput.
-            currentRecording = videoCapture.Output
+            var pendingRecording = (videoCapture.Output as Recorder)
                .PrepareRecording(RequireActivity(), mediaStoreOutput);
-            if (audioEnabled) currentRecording.WithAudioEnabled();
-            currentRecording.Start(mainThreadExecutor, this);
+            if (audioEnabled) pendingRecording.WithAudioEnabled();
+            currentRecording = pendingRecording.Start(mainThreadExecutor, this);
 
             Log.Info(Tag, "Recording started");
         }
@@ -174,7 +191,7 @@ namespace CameraXVideo
                 Activity.RunOnUiThread(() =>
                 {
                     var args = new Bundle();
-                    args.PutString("uri", videoRecordEvent.OutputResults.OutputUri);
+                    args.PutString("uri", ((VideoRecordEvent.Finalize)videoRecordEvent).OutputResults.OutputUri.ToString());
                     navController.Navigate(
                         Resource.Id.action_capture_to_video_viewer, args);
                 });
@@ -200,11 +217,15 @@ namespace CameraXVideo
         //
         // Query and cache this platform's camera capabilities, run only once.
         //
-        CaptureFragment()
+        public override void OnCreate(Bundle savedInstanceState)
         {
+            base.OnCreate(savedInstanceState);
+
             navController = AndroidX.Navigation.Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container);
 
             mainThreadExecutor = ContextCompat.GetMainExecutor(RequireContext());
+
+            enumerationDeferred.Wait();
 
             var cameraProviderFuture = ProcessCameraProvider.GetInstance(RequireContext());
             cameraProviderFuture.AddListener(new Runnable(() =>
@@ -224,12 +245,14 @@ namespace CameraXVideo
                         if (provider.HasCamera(camSelector))
                         {
                             var camera = provider.BindToLifecycle(RequireActivity(), camSelector);
-                            QualitySelector
-                                .GetSupportedQualities(camera.CameraInfo)
-                                .Where(quality => new Quality[] { Quality.UHD, Quality.FHD, Quality.HD, Quality.SD }
-                                    .Contains(quality))
-                                .Select(it =>
-                                    cameraCapabilities.Add(new CameraCapability() { CamSelector = camSelector, Qualities = it }));
+                            cameraCapabilities.Add(new CameraCapability()
+                            {
+                                CamSelector = camSelector,
+                                Qualities = QualitySelector
+                                    .GetSupportedQualities(camera.CameraInfo)
+                                    .Where(quality => new CamcorderQuality[] { CamcorderQuality.Q2160p, CamcorderQuality.Q1080p, CamcorderQuality.Q720p, CamcorderQuality.Q480p }
+                                        .Contains(quality.GetValue())).ToList()
+                            });
                         }
                     }
                     catch (Exception exc)
@@ -237,7 +260,9 @@ namespace CameraXVideo
                         Log.Error(Tag, "Camera Face " + camSelector + " is not supported", exc);
                     }
                 }
-            }));
+
+                enumerationDeferred.Release();
+            }), mainThreadExecutor);
         }
 
         //
@@ -251,9 +276,17 @@ namespace CameraXVideo
         {
             InitializeUI();
 
-            InitializeQualitySectionsUI();
+            enumerationDeferred.WaitAsync().ContinueWith((t) =>
+            {
+                Activity.RunOnUiThread(() =>
+                {
+                    InitializeQualitySectionsUI();
 
-            BindCaptureUsecase();
+                    BindCaptureUsecase();
+
+                    enumerationDeferred.Release();
+                });
+            });
         }
 
         //
@@ -283,7 +316,7 @@ namespace CameraXVideo
             }
             else if (v.Id == Resource.Id.capture_button)
             {
-                if (!recordingState.isInitialized ||
+                if (recordingState == null ||
                     recordingState is VideoRecordEvent.Finalize)
                 {
                     EnableUI(false);  // Our eventListener will turn on the Recording UI.
@@ -398,10 +431,10 @@ namespace CameraXVideo
 
             var stats = videoRecordEvent.RecordingStats;
             var size = stats.NumBytesRecorded / 1000;
-            var time = TimeUnit.Nanoseconds.ToSeconds(stats.recordedDurationNanos);
+            var time = TimeUnit.Nanoseconds.ToSeconds(stats.RecordedDurationNanos);
             var text = state + ": recorded " + size + " KB, in " + time + " seconds";
             if (videoRecordEvent is VideoRecordEvent.Finalize)
-                text = text + "\nFile saved to: " + videoRecordEvent.OutputResults.OutputUri;
+                text = text + "\nFile saved to: " + ((VideoRecordEvent.Finalize)videoRecordEvent).OutputResults.OutputUri.ToString();
 
             captureLiveStatus.SetValue(text);
             Log.Info(Tag, "recording event: " + text);
@@ -496,41 +529,13 @@ namespace CameraXVideo
             InitializeQualitySectionsUI();
         }
 
-        public class Adapter : RecyclerView.Adapter,
-            View.IOnClickListener
+        public class Listener : Object, View.IOnClickListener
         {
             CaptureFragment parent;
-            private string[] dataset;
             private int position;
 
-            public Adapter(CaptureFragment parent, string[] dataset)
-            {
-                this.parent = parent;
-                this.dataset = dataset;
-            }
-
-            public class ViewHolder : RecyclerView.ViewHolder
-            {
-                public ViewHolder(View view) : base(view) { }
-            }
-
-            public override int ItemCount => dataset.Length;
-
-            public override void OnBindViewHolder(RecyclerView.ViewHolder viewHolder, int position)
-            {
-                TextView textView = viewHolder.ItemView.FindViewById<TextView>(Resource.Id.qualityTextView);
-                textView.Text = dataset[this.position = position];
-
-                // select the default quality selector
-                viewHolder.ItemView.Selected = position == parent.qualityIndex;
-                viewHolder.ItemView.SetOnClickListener(this);
-            }
-
-            public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup viewGroup, int viewType)
-            {
-                View view = LayoutInflater.From(viewGroup.Context).Inflate(Resource.Layout.video_quality_item, viewGroup, false);
-                return new ViewHolder(view);
-            }
+            public Listener(CaptureFragment parent, int position) =>
+                (this.parent, this.position) = (parent, position);
 
             public void OnClick(View v)
             {
@@ -548,6 +553,38 @@ namespace CameraXVideo
                 // rebind the use cases to put the new QualitySelection in action.
                 parent.EnableUI(false);
                 parent.BindCaptureUsecase();
+            }
+        }
+
+        public class Adapter : RecyclerView.Adapter
+        {
+            CaptureFragment parent;
+            private string[] dataset;
+
+            public Adapter(CaptureFragment parent, string[] dataset) =>
+                (this.parent, this.dataset) = (parent, dataset);
+
+            public class ViewHolder : RecyclerView.ViewHolder
+            {
+                public ViewHolder(View view) : base(view) { }
+            }
+
+            public override int ItemCount => dataset.Length;
+
+            public override void OnBindViewHolder(RecyclerView.ViewHolder viewHolder, int position)
+            {
+                TextView textView = viewHolder.ItemView.FindViewById<TextView>(Resource.Id.qualityTextView);
+                textView.Text = dataset[position];
+
+                // select the default quality selector
+                viewHolder.ItemView.Selected = position == parent.qualityIndex;
+                viewHolder.ItemView.SetOnClickListener(new Listener(parent, position));
+            }
+
+            public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup viewGroup, int viewType)
+            {
+                View view = LayoutInflater.From(viewGroup.Context).Inflate(Resource.Layout.video_quality_item, viewGroup, false);
+                return new ViewHolder(view);
             }
         }
 
@@ -576,7 +613,7 @@ namespace CameraXVideo
             ViewGroup container,
             Bundle savedInstanceState)
         {
-            return inflater.Inflate(Resource.Id.container, container);
+            return inflater.Inflate(Resource.Layout.fragment_capture, container, false);
         }
 
         public override void OnViewCreated(View view, Bundle savedInstanceState)

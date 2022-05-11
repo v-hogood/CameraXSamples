@@ -16,6 +16,7 @@ namespace CameraXVideo
     //      Accept MediaStore URI and play it with VideoView (Also displaying file size and location)
     //      Note: Might be good to retrieve the encoded file mime type (not based on file type)
     //
+    [Android.App.Activity(Name = "com.android.example.cameraxvideo.fragments.VideoViewerFragment")]
     class VideoViewerFragment : Fragment,
         MediaScannerConnection.IOnScanCompletedListener
     {
@@ -28,7 +29,7 @@ namespace CameraXVideo
             ViewGroup container,
             Bundle savedInstanceState)
         {
-            View view = inflater.Inflate(Resource.Id.view_viewer_container, container);
+            View view = inflater.Inflate(Resource.Layout.fragment_video_viewer, container, false);
 
             videoViewer = view.FindViewById<VideoView>(Resource.Id.video_viewer);
             videoViewerTips = view.FindViewById<TextView>(Resource.Id.video_viewer_tips);
@@ -38,7 +39,7 @@ namespace CameraXVideo
             if (RequireActivity().Theme.ResolveAttribute(Android.Resource.Attribute.ActionBarSize, tv, true))
             {
                 var actionBarHeight = TypedValue.ComplexToDimensionPixelSize(tv.Data, Resources.DisplayMetrics);
-                videoViewerTips.y = videoViewerTips.y - actionBarHeight;
+                videoViewerTips.SetY(videoViewerTips.GetY() - actionBarHeight);
             }
 
             return view;
