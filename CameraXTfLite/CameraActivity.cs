@@ -63,8 +63,6 @@ namespace CameraXTfLite
         private int frameCounter;
         private long lastFpsTimestamp;
         private PreviewView viewFinder;
-        private SurfaceView surfaceView;
-        private TextureView textureView;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -151,6 +149,7 @@ namespace CameraXTfLite
                         .SetTargetAspectRatio(AspectRatio.Ratio43)
                         .SetTargetRotation((int)viewFinder.Display.Rotation)
                         .SetBackpressureStrategy(ImageAnalysis.StrategyKeepOnlyLatest)
+                        .SetOutputImageFormat(ImageAnalysis.OutputImageFormatRgba8888)
                         .Build();
 
                     frameCounter = 0;
@@ -169,14 +168,6 @@ namespace CameraXTfLite
                     // Use the camera object to link our preview use case with the view
                     preview.SetSurfaceProvider(viewFinder.SurfaceProvider);
 
-                    OnPreviewSizeChosen(preview.AttachedSurfaceResolution);
-
-                    viewFinder.Post(() =>
-                    {
-                        surfaceView = viewFinder.GetChildAt(0) as SurfaceView;
-                        textureView = viewFinder.GetChildAt(0) as TextureView;
-                    });
-
                 }), ContextCompat.GetMainExecutor(this));
             });
         }
@@ -189,48 +180,36 @@ namespace CameraXTfLite
             }
         }
 
-        private void OnPreviewSizeChosen(Size size)
-        {
-            imageRotationDegrees = viewFinder.Display.Rotation switch
-            {
-                SurfaceOrientation.Rotation0 => 0,
-                SurfaceOrientation.Rotation90 => 270,
-                SurfaceOrientation.Rotation180 => 180,
-                SurfaceOrientation.Rotation270 => 90,
-                _ => 0
-            };
-            bitmapBuffer = Bitmap.CreateBitmap(
-                size.Height, size.Width, Bitmap.Config.Argb8888);
-
-            var cropSize = Math.Min(bitmapBuffer.Width, bitmapBuffer.Height);
-            tfImageProcessor = new ImageProcessor.Builder()
-                .Add(new ResizeWithCropOrPadOp(cropSize, cropSize))
-                .Add(new ResizeOp(
-                    tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.Bilinear))
-                .Add(new Rot90Op(-imageRotationDegrees / 90))
-                .Add(new NormalizeOp(0f, 1f))
-                .Build();
-        }
-
         public void Analyze(IImageProxy image)
         {
-            image.Close();
-
             // Early exit: image analysis is in paused state
             if (pauseAnalysis)
             {
+                image.Close();
                 return;
             }
 
+            if (bitmapBuffer == null)
+            {
+                // The image rotation and RGB image buffer are initialized only once
+                // the analyzer has started running
+                imageRotationDegrees = image.ImageInfo.RotationDegrees;
+                bitmapBuffer = Bitmap.CreateBitmap(
+                    image.Width, image.Height, Bitmap.Config.Argb8888);
+
+                var cropSize = Math.Min(bitmapBuffer.Width, bitmapBuffer.Height);
+                tfImageProcessor = new ImageProcessor.Builder()
+                    .Add(new ResizeWithCropOrPadOp(cropSize, cropSize))
+                    .Add(new ResizeOp(
+                        tfInputSize.Height, tfInputSize.Width, ResizeOp.ResizeMethod.Bilinear))
+                    .Add(new Rot90Op(-imageRotationDegrees / 90))
+                    .Add(new NormalizeOp(0f, 1f))
+                    .Build();
+            }
+
             // Copy out RGB bits to our shared buffer
-            if (surfaceView != null && surfaceView.Holder.Surface != null && surfaceView.Holder.Surface.IsValid)
-            {
-                PixelCopy.Request(surfaceView, bitmapBuffer, this, surfaceView.Handler);
-            }
-            else if (textureView != null && textureView.IsAvailable)
-            {
-                textureView.GetBitmap(bitmapBuffer);
-            }
+            bitmapBuffer.CopyPixelsFromBuffer(image.GetPlanes()[0].Buffer);
+            image.Close();
 
             // Process the image in Tensorflow
             tfImageBuffer.Load(bitmapBuffer);
