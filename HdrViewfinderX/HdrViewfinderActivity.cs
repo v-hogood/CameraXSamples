@@ -94,7 +94,6 @@ namespace HdrViewfinder
 
         private LensFacing mLensFacing = LensFacing.Back;
         private Size mPreviewSize;
-        private bool mSurfaceTextureUpdated;
 
         RenderScript mRS;
         ViewfinderProcessor mProcessor;
@@ -114,8 +113,6 @@ namespace HdrViewfinder
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.main);
 
-            Window.AddFlags(WindowManagerFlags.Fullscreen);
-
             mViewListener = new ViewListener(this);
 
             mCaptureCallback = new CaptureCallback(this);
@@ -127,9 +124,6 @@ namespace HdrViewfinder
             mPreviewView.SetScaleType(PreviewView.ScaleType.FitCenter);
             mPreviewView.SetOnTouchListener(this);
             mGestureDetector = new GestureDetector(this, mViewListener);
-
-            ImageButton infoButton = (ImageButton)FindViewById(Resource.Id.info_button);
-            infoButton.SetOnClickListener(this);
 
             Button helpButton = (Button)FindViewById(Resource.Id.help_button);
             helpButton.SetOnClickListener(this);
@@ -172,6 +166,26 @@ namespace HdrViewfinder
             }
         }
 
+        public override bool OnCreateOptionsMenu(IMenu menu)
+        {
+            MenuInflater.Inflate(Resource.Menu.main, menu);
+            return base.OnCreateOptionsMenu(menu);
+        }
+
+        public override bool OnOptionsItemSelected(IMenuItem item)
+        {
+            switch(item.ItemId)
+            {
+                case Resource.Id.info:
+                {
+                    MessageDialogFragment.newInstance(Resource.String.intro_message)
+                        .Show(SupportFragmentManager, FragmentDialog);
+                    break;
+                }
+            }
+            return base.OnOptionsItemSelected(item);
+        }
+
         private GestureDetector.IOnGestureListener mViewListener;
 
         public class ViewListener : GestureDetector.SimpleOnGestureListener
@@ -197,18 +211,12 @@ namespace HdrViewfinder
             public override bool OnScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
             {
                 float xPosition = e1.GetAxisValue(Axis.X);
-                float yPosition = e1.GetAxisValue(Axis.Y);
                 float width = mParent.mPreviewView.Width;
                 float height = mParent.mPreviewView.Height;
 
                 float xPosNorm = xPosition / width;
-                float yPosNorm = yPosition / height;
 
-                bool isPortrait =
-                    mParent.mPreviewView.Display.Rotation == SurfaceOrientation.Rotation0 ||
-                    mParent.mPreviewView.Display.Rotation == SurfaceOrientation.Rotation180;
-                int step = isPortrait ?
-                    (distanceX < -Math.Abs(distanceY) ? 1 : distanceX > Math.Abs(distanceY) ? -1 : 0) :
+                int step =
                     (distanceY < -Math.Abs(distanceX) ? -1 : distanceY > Math.Abs(distanceX) ? 1 : 0);
 
                 // Even on left, odd on right
@@ -219,7 +227,7 @@ namespace HdrViewfinder
                     mParent.mAutoExposure = Math.Max((exposureRange.Lower as Integer).IntValue(),
                         Math.Min((exposureRange.Upper as Integer).IntValue(), mParent.mAutoExposure));
                 }
-                else if (isPortrait && yPosNorm > 0.5 || !isPortrait && xPosNorm > 0.5)
+                else if (xPosNorm > 0.5)
                 {
                     mParent.mOddExposure += step;
                     mParent.mOddExposure = Math.Max(mParent.mEvenExposure,
@@ -247,8 +255,7 @@ namespace HdrViewfinder
         //
         public void OnClick(View v)
         {
-            MessageDialogFragment.newInstance(v.Id == Resource.Id.help_button ?
-                Resource.String.help_text : Resource.String.intro_message)
+            MessageDialogFragment.newInstance(Resource.String.help_text)
                 .Show(SupportFragmentManager, FragmentDialog);
         }
 
@@ -395,7 +402,6 @@ namespace HdrViewfinder
                         mCameraInfo = camera.CameraInfo;
                         mCameraControl = camera.CameraControl;
                         preview.SetSurfaceProvider(this);
-                        mSurfaceTextureUpdated = false;
                         foundCamera = true;
                     }
                     if (!foundCamera)
@@ -558,45 +564,6 @@ namespace HdrViewfinder
 
         public void OnSurfaceTextureUpdated(SurfaceTexture texture)
         {
-            if (!mSurfaceTextureUpdated)
-            {
-                float centerX = mPreviewSize.Width / 2;
-                float centerY = mPreviewSize.Height / 2;
-
-                Matrix matrix = mTextureView.GetTransform(null);
-                if (mLensFacing == LensFacing.Front)
-                {
-                    // SurfaceView/TextureView automatically mirrors the Surface for front camera, which
-                    // needs to be compensated by mirroring the Surface around the upright direction of the
-                    // output image.
-                    if (mCameraInfo.SensorRotationDegrees == 90 ||
-                        mCameraInfo.SensorRotationDegrees == 270)
-                    {
-                        // If the rotation is 90/270, the Surface should be flipped vertically.
-                        //   +---+     90 +---+  270 +---+
-                        //   | ^ | -->    | < |      | > |
-                        //   +---+        +---+      +---+
-                        matrix.PreScale(1F, -1F, centerX, centerY);
-                    }
-                    else
-                    {
-                        // If the rotation is 0/180, the Surface should be flipped horizontally.
-                        //   +---+      0 +---+  180 +---+
-                        //   | ^ | -->    | ^ |      | v |
-                        //   +---+        +---+      +---+
-                        matrix.PreScale(-1F, 1F, centerX, centerY);
-                    }
-                }
-                if (mCameraInfo.SensorRotationDegrees == 90 ||
-                    mCameraInfo.SensorRotationDegrees == 270)
-                {
-                    float aspect = centerX / centerY;
-                    matrix.PostScale(1f / aspect, aspect, centerX, centerY);
-                }
-                matrix.PostRotate(mCameraInfo.SensorRotationDegrees, centerX, centerY);
-                mTextureView.SetTransform(matrix);
-                mSurfaceTextureUpdated = true;
-            }
         }
 
         public bool OnSurfaceTextureDestroyed(SurfaceTexture texture)

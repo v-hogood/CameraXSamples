@@ -84,6 +84,10 @@
       <SubType></SubType>
       <Generator></Generator>
     </AndroidResource>
+    <AndroidResource Include="Resources\menu\main.xml">
+      <SubType></SubType>
+      <Generator></Generator>
+    </AndroidResource>
     <AndroidResource Include="Resources\layout\main.xml">
       <SubType></SubType>
       <Generator></Generator>
@@ -137,10 +141,6 @@
       <Generator></Generator>
     </AndroidResource>
     <AndroidResource Include="Resources\values-v21\base-colors.xml">
-      <SubType></SubType>
-      <Generator></Generator>
-    </AndroidResource>
-    <AndroidResource Include="Resources\layout-port\main.xml">
       <SubType></SubType>
       <Generator></Generator>
     </AndroidResource>

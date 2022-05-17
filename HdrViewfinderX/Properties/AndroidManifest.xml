@@ -37,7 +37,8 @@
         <activity
             android:name="com.example.android.hdrviewfinder.HdrViewfinderActivity"
             android:label="@string/app_name"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+            android:screenOrientation="landscape"
+                android:theme="@style/Theme.AppCompat.Light">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

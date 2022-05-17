@@ -37,14 +37,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:gravity="center">
-
-        <ImageButton
-            android:id="@+id/info_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_action_info"
-            android:background="@null"/>
+        android:layout_margin="5dp">
 
         <Button
             android:id="@+id/help_button"
@@ -56,7 +49,6 @@
             android:id="@+id/mode_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:textSize="16sp"
             tools:text="MODE: HDR"/>
 
@@ -64,7 +56,6 @@
             android:id="@+id/auto_exposure_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:text="@string/auto_exposure_label"/>
 
         <TextView
@@ -79,7 +70,6 @@
             android:id="@+id/even_exposure_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:text="@string/even_exposure_label"/>
 
         <TextView
@@ -94,7 +84,6 @@
             android:id="@+id/odd_exposure_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:text="@string/odd_exposure_label"/>
 
         <TextView
