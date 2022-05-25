@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Android.Graphics;
 using Java.Lang;
 using Xamarin.TensorFlow.Lite;
-using Org.Tensorflow.Lite.Support.Image;
+using Xamarin.TensorFlow.Lite.Support.Image;
 
 namespace CameraXTfLite
 {

@@ -23,11 +23,11 @@ using Java.Nio;
 using Java.Util.Concurrent;
 using Xamarin.TensorFlow.Lite;
 using Xamarin.TensorFlow.Lite.Nnapi;
-using Org.Tensorflow.Lite.Support.Common.Ops;
-using Org.Tensorflow.Lite.Support.Image;
-using Org.Tensorflow.Lite.Support.Image.Ops;
-using Org.Tensorflow.Lite.Support.Common;
-using Org.Tensorflow.Lite.Support.Metadata;
+using Xamarin.TensorFlow.Lite.Support.Common.Ops;
+using Xamarin.TensorFlow.Lite.Support.Image;
+using Xamarin.TensorFlow.Lite.Support.Image.Ops;
+using Xamarin.TensorFlow.Lite.Support.Common;
+using Xamarin.TensorFlow.Lite.Support.Metadata;
 
 namespace CameraXTfLite
 {
