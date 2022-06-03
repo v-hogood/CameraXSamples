@@ -34,6 +34,7 @@
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
 
         <activity
+            android:exported="true"
             android:name="com.android.example.camerax.tflite.CameraActivity"
             android:rotationAnimation="seamless"
             tools:targetApi="O">
