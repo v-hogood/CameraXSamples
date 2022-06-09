@@ -4,6 +4,7 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
+using AndroidX.Core.View;
 
 namespace CameraXVideo
 {
@@ -30,8 +31,7 @@ namespace CameraXVideo
             base.OnResume();
             // Before setting full screen flags, we must wait a bit to let UI settle; otherwise, we may
             // be trying to set app to immersive mode before it's ready and the flags do not stick
-            container.PostDelayed(() => container.SystemUiVisibility =
-                (Android.Views.StatusBarVisibility)FlagsFullscreen,
+            container.PostDelayed(() => WindowCompat.SetDecorFitsSystemWindows(Window, false),
                 ImmersiveFlagTimeout);
         }
 
