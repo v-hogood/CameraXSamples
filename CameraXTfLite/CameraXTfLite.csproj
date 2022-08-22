@@ -18,7 +18,7 @@
     <AndroidResgenFile>Resources\Resource.designer.cs</AndroidResgenFile>
     <AndroidResgenClass>Resource</AndroidResgenClass>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
-    <TargetFrameworkVersion>v12.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v12.1</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
@@ -124,15 +124,15 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.2" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0-beta02" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0-beta02" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0-beta02" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0-beta02" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0" />
     <PackageReference Include="Xamarin.AndroidX.ConstraintLayout" Version="2.1.4.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.6.1.1" />
     <PackageReference Include="Xamarin.Google.FlatBuffers" Version="2.0.3" />
-    <PackageReference Include="Xamarin.TensorFlow.Lite" Version="2.6.0" />
+    <PackageReference Include="Xamarin.TensorFlow.Lite" Version="2.6.0.1" />
     <PackageReference Include="Xamarin.TensorFlow.Lite.Support" Version="0.4.1" />
     <PackageReference Include="Xamarin.TensorFlow.Lite.Support.Metadata" Version="0.4.1" />
   </ItemGroup>
