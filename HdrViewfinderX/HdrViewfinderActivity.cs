@@ -20,7 +20,6 @@ using AndroidX.Camera.View;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Core.Util;
-using AndroidX.Lifecycle;
 using Google.Android.Material.Snackbar;
 using Google.Common.Util.Concurrent;
 using Java.Lang;
@@ -394,7 +393,7 @@ namespace HdrViewfinder
                     // Must unbind the use-cases before rebinding them
                     mCameraProvider.UnbindAll();
                     ICamera camera = mCameraProvider.BindToLifecycle(
-                        this as ILifecycleOwner, cameraSelector, preview);
+                        this, cameraSelector, preview);
                       
                     if (camera != null)
                     {
