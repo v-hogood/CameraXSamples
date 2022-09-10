@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.808.6
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HdrViewfinder", "HdrViewfinder.csproj", "{376C6CB5-45C9-4230-B782-143754E5CC0C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{D699D5F6-F7C7-41BC-9A82-8CE6E29A4F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D699D5F6-F7C7-41BC-9A82-8CE6E29A4F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D699D5F6-F7C7-41BC-9A82-8CE6E29A4F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D699D5F6-F7C7-41BC-9A82-8CE6E29A4F47}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7A36B4C9-B649-41CC-8B23-EB11DE8EE64B}
+	EndGlobalSection
+EndGlobal
