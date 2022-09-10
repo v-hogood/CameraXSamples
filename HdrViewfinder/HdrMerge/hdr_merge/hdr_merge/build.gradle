@@ -1,0 +1,19 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdkVersion 31
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 31
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+

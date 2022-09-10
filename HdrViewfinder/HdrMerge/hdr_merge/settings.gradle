@@ -1,0 +1,2 @@
+include ':hdr_merge'
+rootProject.name = "hdr_merge"
