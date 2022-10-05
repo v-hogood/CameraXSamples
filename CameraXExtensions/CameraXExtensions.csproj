@@ -37,6 +37,7 @@
     <AndroidUseSharedRuntime>True</AndroidUseSharedRuntime>
     <AndroidLinkMode>None</AndroidLinkMode>
     <EmbedAssembliesIntoApk>False</EmbedAssembliesIntoApk>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -64,6 +65,17 @@
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Model\PermissionState.cs" />
+    <Compile Include="Model\CameraUiAction.cs" />
+    <Compile Include="Model\CameraUiState.cs" />
+    <Compile Include="Adapter\CameraExtensionsSelector.cs" />
+    <Compile Include="Adapter\CameraExtensionItem.cs" />
+    <Compile Include="App\CameraExtensionsApplication.cs" />
+    <Compile Include="Ui\CameraExtensionsScreen.cs" />
+    <Compile Include="Ui\CenterItemSnapHelper.cs" />
+    <Compile Include="Ui\OffsetCenterItemDecoration.cs" />
+    <Compile Include="Ui\ViewKtx.cs" />
+    <Compile Include="ViewModel\CameraExtensionsViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -101,15 +113,24 @@
     <AndroidResource Include="Resources\drawable\ic_close.xml" />
     <AndroidResource Include="Resources\drawable\ic_flip_camera_android.xml" />
     <AndroidResource Include="Resources\drawable\ic_launcher_background.xml" />
-    <AndroidResource Include="Resources\drawable\pill_selector_background.xml" />
+    <AndroidResource Include="Resources\drawable\pill_selected_background.xml" />
     <AndroidResource Include="Resources\drawable\pill_unselected_background.xml" />
     <AndroidResource Include="Resources\drawable\selector_background.xml" />
     <AndroidResource Include="Resources\drawable-v24\ic_launcher_foreground.xml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.2.0.5" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.0.0.1" />
-    <PackageReference Include="Xamarin.Essentials" Version="1.6.1" />
+    <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Extensions" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.ConstraintLayout" Version="2.1.4.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Common.Java8" Version="2.5.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime.Ktx" Version="2.5.1" />
+    <PackageReference Include="Xamarin.Io.CoilKt.Coil" Version="1.4.0" />
+    <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.6.4" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.6.1.1" />
+    <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
