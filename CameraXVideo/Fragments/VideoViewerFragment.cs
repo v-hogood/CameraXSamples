@@ -7,6 +7,7 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Fragment.App;
+using AndroidX.Lifecycle;
 using Java.Lang;
 
 namespace CameraXVideo
@@ -50,7 +51,8 @@ namespace CameraXVideo
             // playback video on main thread with VideoView
             if (uri != null)
             {
-                Activity.RunOnUiThread(() => ShowVideo(uri));
+                LifecycleOwnerKt.GetLifecycleScope(this).Launch(() =>
+                    ShowVideo(uri));
             }
         }
 

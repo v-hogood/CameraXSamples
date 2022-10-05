@@ -17,6 +17,7 @@ using Android.Content.Res;
 using Android.Media;
 using Android.OS;
 using Android.Provider;
+using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Widget;
@@ -35,6 +36,9 @@ using Java.Lang;
 using Java.Text;
 using Java.Util;
 using Java.Util.Concurrent;
+using Kotlin.Coroutines;
+using Kotlin.Jvm.Functions;
+using Xamarin.KotlinX.Coroutines;
 using VideoCapture = AndroidX.Camera.Video.VideoCapture;
 
 namespace CameraXVideo
@@ -188,7 +192,7 @@ namespace CameraXVideo
             if (videoRecordEvent is VideoRecordEvent.Finalize)
             {
                 // display the captured video
-                Activity.RunOnUiThread(() =>
+                LifecycleOwnerKt.GetLifecycleScope(this).Launch(() =>
                 {
                     var args = new Bundle();
                     args.PutString("uri", ((VideoRecordEvent.Finalize)videoRecordEvent).OutputResults.OutputUri.ToString());
@@ -278,7 +282,7 @@ namespace CameraXVideo
 
             enumerationDeferred.WaitAsync().ContinueWith((t) =>
             {
-                Activity.RunOnUiThread(() =>
+                LifecycleOwnerKt.GetLifecycleScope(ViewLifecycleOwner).Launch(() =>
                 {
                     InitializeQualitySectionsUI();
 
@@ -305,10 +309,8 @@ namespace CameraXVideo
                 qualityIndex = DefaultQualityIdx;
                 InitializeQualitySectionsUI();
                 EnableUI(false);
-                previewView.Post(() =>
-                {
-                    BindCaptureUsecase();
-                });
+                LifecycleOwnerKt.GetLifecycleScope(ViewLifecycleOwner).Launch(() =>
+                    BindCaptureUsecase());
             }
             else if (v.Id == Resource.Id.audio_selection)
             {
@@ -552,7 +554,8 @@ namespace CameraXVideo
 
                 // rebind the use cases to put the new QualitySelection in action.
                 parent.EnableUI(false);
-                parent.BindCaptureUsecase();
+                LifecycleOwnerKt.GetLifecycleScope(parent.ViewLifecycleOwner).Launch(() =>
+                    parent.BindCaptureUsecase());
             }
         }
 
@@ -640,5 +643,36 @@ namespace CameraXVideo
         private const int DefaultQualityIdx = 0;
         private new const string Tag = "CaptureFragment";
         private const string FilenameFormat = "yyyy-MM-dd-HH-mm-ss-SSS";
+    }
+
+    public static class BuildersKtx
+    {
+        public class Function2 : Object, IFunction2
+        {
+            System.Action action;
+            public Function2(System.Action action) => this.action = action;
+            public Object Invoke(Object p0, Object p1)
+            {
+                action();
+                return null;
+            }
+        }
+
+        static System.IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
+        static System.IntPtr id_launch;
+        public static Object Launch(this ICoroutineScope scope, System.Action action)
+        {
+            var context = EmptyCoroutineContext.Instance;
+            var start = CoroutineStart.Default;
+            var block = new Function2(action);
+
+            if (id_launch == System.IntPtr.Zero)
+                id_launch = JNIEnv.GetStaticMethodID(class_ref,
+                    "launch", "(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;");
+
+            System.IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
+                new JValue(scope), new JValue(context), new JValue(start), new JValue(block));
+            return Object.GetObject<Object>(obj, JniHandleOwnership.TransferLocalRef);
+        }
     }
 }
