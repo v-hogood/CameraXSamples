@@ -38,7 +38,7 @@ namespace CameraXExtensions
             CaptureUiState = captureUiState;
         }
 
-        public ICoroutineContext Context => LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).CoroutineContext;
+        public ICoroutineContext Context => ViewModelKt.GetViewModelScope(this).CoroutineContext;
 
         public void ResumeWith(Object result) { }
 
@@ -79,7 +79,7 @@ namespace CameraXExtensions
         //
         public void InitializeCamera(Context context)
         {
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
             new Function2(() =>
             {
                 var currentCameraUiState = cameraUiState.Value as CameraUiState;
@@ -163,7 +163,7 @@ namespace CameraXExtensions
             );
             preview.SetSurfaceProvider(previewView.SurfaceProvider);
 
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
             new Function2(() =>
             {
                 if ((cameraUiState.Value as CameraUiState).CameraState != CameraState.Ready)
@@ -179,7 +179,7 @@ namespace CameraXExtensions
         public void StopPreview()
         {
             preview.SetSurfaceProvider(null);
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                     cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.PreviewStopped }, this)));
         }
@@ -201,7 +201,7 @@ namespace CameraXExtensions
                     new CameraUiState(currentCameraUiState) { CameraLens = CameraSelector.LensFacingFront } :
                     new CameraUiState(currentCameraUiState) { CameraLens = CameraSelector.LensFacingBack };
 
-                LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+                ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                 {
                     cameraUiState.Emit(
@@ -225,7 +225,7 @@ namespace CameraXExtensions
         //
         public void CapturePhoto()
         {
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                     captureUiState.Emit(new CaptureState.CaptureStarted(), this)));
             var photoFile = new File(GetCaptureStorageDirectory(), "test.jpg");
@@ -247,14 +247,14 @@ namespace CameraXExtensions
 
         public void OnImageSaved(ImageCapture.OutputFileResults outputFileResults)
         {
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                     captureUiState.Emit(new CaptureState.CaptureFinished(outputFileResults), this)));
         }
 
         public void OnError(ImageCaptureException exception)
         {
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                     captureUiState.Emit(new CaptureState.CaptureFailed(exception), this)));
         }
@@ -264,7 +264,7 @@ namespace CameraXExtensions
         //
         public void SetExtensionMode(int extensionMode)
         {
-            LifecycleOwnerKt.GetLifecycleScope(ProcessLifecycleOwner.Get()).Launch(
+            ViewModelKt.GetViewModelScope(this).Launch(
             new Function2(() =>
             {
                 cameraUiState.Emit(

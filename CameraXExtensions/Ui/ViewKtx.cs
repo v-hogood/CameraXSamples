@@ -53,7 +53,7 @@ namespace CameraXExtensions
     {
         static System.IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
         static System.IntPtr id_launch;
-        public static Object Launch(this LifecycleCoroutineScope scope, IFunction2 block)
+        public static Object Launch(this ICoroutineScope scope, IFunction2 block)
         {
             ICoroutineContext context = EmptyCoroutineContext.Instance;
             CoroutineStart start = CoroutineStart.Default;
