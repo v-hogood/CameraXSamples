@@ -241,7 +241,7 @@ namespace CameraXExtensions
 
             imageCapture.TakePicture(
                 outputFileOptions,
-                new DispatcherExecutor(Dispatchers.Default),
+                ExecutorsKt.AsExecutor(Dispatchers.Default),
                 this);
         }
 
