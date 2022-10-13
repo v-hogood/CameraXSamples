@@ -62,12 +62,11 @@
     <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.2" />
     <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0" />
     <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0.1" />
     <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0" />
     <PackageReference Include="Xamarin.AndroidX.Concurrent.Futures" Version="1.1.0.9" />
     <PackageReference Include="Xamarin.AndroidX.ConstraintLayout" Version="2.1.4.1" />
-    <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.1" />
-    <PackageReference Include="Xamarin.AndroidX.Window" Version="1.0.0.9" />
+    <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.2" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.6.1.1" />
   </ItemGroup>

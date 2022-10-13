@@ -301,6 +301,12 @@ namespace CameraXBasic.Fragments
             // Must unbind the use-cases before rebinding them
             cameraProvider.UnbindAll();
     
+            if (camera != null)
+            {
+                // Must remove observers from the previous camera instance
+                RemoveCameraStateObservers(camera.CameraInfo);
+            }
+
             try
             {
                 // A variable number of use-cases can be passed here -
@@ -316,6 +322,11 @@ namespace CameraXBasic.Fragments
             {
                 Log.Error(Tag, "Use case binding failed: " + exc);
             }
+        }
+
+        private void RemoveCameraStateObservers(ICameraInfo cameraInfo)
+        {
+            cameraInfo.CameraState.RemoveObservers(this);
         }
 
         private void ObserveCameraState(ICameraInfo cameraInfo)
