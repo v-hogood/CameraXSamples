@@ -8,6 +8,7 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.Fragment.App;
 using AndroidX.Lifecycle;
+using AndroidX.Navigation;
 using Java.Lang;
 
 namespace CameraXVideo
@@ -19,6 +20,7 @@ namespace CameraXVideo
     //
     [Android.App.Activity(Name = "com.android.example.cameraxvideo.fragments.VideoViewerFragment")]
     class VideoViewerFragment : Fragment,
+        View.IOnClickListener,
         MediaScannerConnection.IOnScanCompletedListener
     {
         // These properties are only valid between OnCreateView and OnDestroyView.
@@ -56,6 +58,11 @@ namespace CameraXVideo
             }
         }
 
+        public void OnClick(View v)
+        {
+            Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).NavigateUp();
+        }
+
         public override void OnViewCreated(View view, Bundle savedInstanceState)
         {
             base.OnViewCreated(view, savedInstanceState);
@@ -73,6 +80,9 @@ namespace CameraXVideo
                 MediaScannerConnection.ScanFile(
                     Context, new string[] { path }, null, this);
             }
+
+            // Handle back button press
+            view.FindViewById<ImageButton>(Resource.Id.back_button).SetOnClickListener(this);
         }
 
         public override void OnDestroyView()

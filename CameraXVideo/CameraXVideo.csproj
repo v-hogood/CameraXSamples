@@ -115,6 +115,7 @@
     <AndroidResource Include="Resources\color\selector_button_text.xml" />
     <AndroidResource Include="Resources\color\selector_ic.xml" />
     <AndroidResource Include="Resources\drawable-mdpi\ic_launcher.png" />
+    <AndroidResource Include="Resources\drawable-hdpi\ic_back.xml" />
     <AndroidResource Include="Resources\drawable-hdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\ic_launcher.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\ic_launcher.png" />

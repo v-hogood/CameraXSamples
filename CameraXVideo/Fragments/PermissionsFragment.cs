@@ -22,7 +22,6 @@ namespace CameraXVideo
     //
     [Android.App.Activity(Name = "com.android.example.cameraxvideo.fragments.PermissionsFragment")]
     class PermissionsFragment : Fragment,
-        View.IOnClickListener,
         IActivityResultCallback,
         IBiConsumer
     {
@@ -46,10 +45,21 @@ namespace CameraXVideo
 
             activityResultLauncher =
                 RegisterForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), this);
+        }
+
+        public override void OnStart()
+        {
+            base.OnStart();
+
             if (!HasPermissions(RequireContext()))
             {
                 // Request camera-related permissions
                 activityResultLauncher.Launch(PermissionsRequired);
+            }
+            else
+            {
+                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(
+                    Resource.Id.action_permissions_to_capture);
             }
         }
 
@@ -59,24 +69,7 @@ namespace CameraXVideo
             Bundle savedInstanceState
         )
         {
-            View view = inflater.Inflate(Resource.Layout.fragment_permission, container, false);
-            view.SetOnClickListener(this);
-            return view;
-        }
-
-        public void OnClick(View v)
-        {
-            if (HasPermissions(RequireContext()))
-            {
-                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(
-                    Resource.Id.action_permissions_to_capture);
-            }
-            else
-            {
-                Log.Error("PermissionsFragment",
-                    "Re-requesting permissions ...");
-                activityResultLauncher.Launch(PermissionsRequired);
-            }
+            return inflater.Inflate(Resource.Layout.fragment_permission, container, false);
         }
 
         // Convenience method used to check if all permissions required by this app are granted */
@@ -95,6 +88,11 @@ namespace CameraXVideo
             permissionGranted = true;
             permissions.ForEach(this);
 
+            if (permissionGranted && !permissions.IsEmpty)
+            {
+                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).Navigate(
+                    Resource.Id.action_permissions_to_capture);
+            }
             if (!permissionGranted)
                 Toast.MakeText(Context, "Permission request denied", ToastLength.Long).Show();
         }
