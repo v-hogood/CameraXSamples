@@ -4,16 +4,20 @@ using System.Linq;
 using Android.Animation;
 using Android.Content;
 using Android.Net;
+using Android.Util;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Camera.View;
+using AndroidX.Core.View;
+using AndroidX.DynamicAnimation;
 using AndroidX.Lifecycle;
 using AndroidX.RecyclerView.Widget;
+using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
-using static Android.Icu.Text.Transliterator;
-using static Android.Provider.DocumentsContract;
+using static AndroidX.Core.View.ViewKt;
+using static AndroidX.Lifecycle.ViewKt;
 using static CameraXExtensions.MainActivity;
 
 namespace CameraXExtensions
@@ -23,12 +27,18 @@ namespace CameraXExtensions
     // Encapsulates the details of how the screen is constructed and exposes a set of explicit
     // operations clients can perform on the screen.
     //
-    class CameraExtensionsScreen :
-        RecyclerView.OnScrollListener,
-        View.IOnClickListener,
+    class CameraExtensionsScreen : RecyclerView.OnScrollListener,
         IContinuation,
-        Animator.IAnimatorListener
+        View.IOnClickListener,
+        View.IOnTouchListener,
+        Animator.IAnimatorListener,
+        DynamicAnimation.IOnAnimationEndListener
     {
+        // animation constants for focus point
+        private const float SpringStiffnessAlphaOut = 100f;
+        private const float SpringStiffness = 800f;
+        private const float SpringDampingRatio = 0.35f;
+
         private View root;
         private Context context;
 
@@ -38,6 +48,7 @@ namespace CameraXExtensions
         private ImageView switchLensButton;
         private RecyclerView extensionSelector;
         private CameraExtensionsSelectorAdapter extensionsAdapter;
+        private View focusPointView;
         private View permissionsRationaleContainer;
         private TextView permissionsRationale;
         private TextView permissionsRequestButton;
@@ -47,7 +58,7 @@ namespace CameraXExtensions
         private IMutableStateFlow action = StateFlowKt.MutableStateFlow(new CameraUiAction());
         public IFlow Action;
 
-        public ICoroutineContext Context => LifecycleOwnerKt.GetLifecycleScope(ViewKt.FindViewTreeLifecycleOwner(root)).CoroutineContext;
+        public ICoroutineContext Context => LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).CoroutineContext;
 
         public void ResumeWith(Java.Lang.Object result) { }
 
@@ -55,29 +66,23 @@ namespace CameraXExtensions
         {
             if (v.Id == Resource.Id.cameraShutter)
             {
-                LifecycleOwnerKt.GetLifecycleScope(ViewKt.FindViewTreeLifecycleOwner(root)).Launch(
+                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
                     new Function2(() =>
                         action.Emit(new CameraUiAction.ShutterButtonClick(), this)));
             }
             else if (v.Id == Resource.Id.switchLens)
             {
-                LifecycleOwnerKt.GetLifecycleScope(ViewKt.FindViewTreeLifecycleOwner(root)).Launch(
-                    new Function2(() =>
-                        action.Emit(new CameraUiAction.SwitchCameraClick(), this)));
-                switchLensButton.Animate().Rotation(180f);
-                switchLensButton.Animate().SetDuration(300L);
-                switchLensButton.Animate().SetListener(this);
-                switchLensButton.Animate().Start();
+                SwitchLens();
             }
             else if (v.Id == Resource.Id.closePhotoPreview)
             {
-                LifecycleOwnerKt.GetLifecycleScope(ViewKt.FindViewTreeLifecycleOwner(root)).Launch(
+                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
                     new Function2(() =>
                         action.Emit(new CameraUiAction.ClosePhotoPreviewClick(), this)));
             }
             else if (v.Id == Resource.Id.permissionsRequestButton)
             {
-                LifecycleOwnerKt.GetLifecycleScope(ViewKt.FindViewTreeLifecycleOwner(root)).Launch(
+                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
                     new Function2(() =>
                         action.Emit(new CameraUiAction.RequestPermissionClick(), this)));
             }
@@ -97,6 +102,9 @@ namespace CameraXExtensions
         private SnapHelper snapHelper = new CenterItemSnapHelper();
         private int snapPosition = RecyclerView.NoPosition;
 
+        public GestureDetectorCompat gestureDetector;
+        public ScaleGestureDetector scaleGestureDetector;
+
         public override void OnScrollStateChanged(RecyclerView recyclerView, int newState)
         {
             if (newState == RecyclerView.ScrollStateIdle)
@@ -114,9 +122,9 @@ namespace CameraXExtensions
             if (oldPosition == newPosition) return;
             SelectItem(newPosition);
             var it = extensionsAdapter.CurrentList[newPosition] as CameraExtensionItem;
-            LifecycleOwnerKt.GetLifecycleScope(ViewKt.FindViewTreeLifecycleOwner(root)).Launch(
-                new Function2(() =>
-                    action.Emit(new CameraUiAction.SelectCameraExtension(it.ExtensionMode), this)));
+            LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
+                new Function2(() => action.Emit(new CameraUiAction.SelectCameraExtension
+                    { Extension = it.ExtensionMode }, this)));
         }
 
         private void SelectItem(int position)
@@ -141,6 +149,7 @@ namespace CameraXExtensions
             closePhotoPreview = root.FindViewById(Resource.Id.closePhotoPreview);
             switchLensButton = root.FindViewById<ImageView>(Resource.Id.switchLens);
             extensionSelector = root.FindViewById<RecyclerView>(Resource.Id.extensionSelector);
+            focusPointView = root.FindViewById(Resource.Id.focusPoint);
             permissionsRationaleContainer =
                 root.FindViewById(Resource.Id.permissionsRationaleContainer);
             permissionsRationale = root.FindViewById<TextView>(Resource.Id.permissionsRationale);
@@ -165,6 +174,61 @@ namespace CameraXExtensions
             closePhotoPreview.SetOnClickListener(this);
 
             permissionsRequestButton.SetOnClickListener(this);
+
+            gestureDetector = new GestureDetectorCompat(context, new SimpleGestureListener(this));
+
+            scaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureListener(this));
+
+            PreviewView.SetOnTouchListener(this);
+        }
+
+        public class SimpleGestureListener : GestureDetector.SimpleOnGestureListener
+        {
+            public SimpleGestureListener(CameraExtensionsScreen parent) { this.parent = parent; }
+            CameraExtensionsScreen parent;
+
+            public override bool OnDown(MotionEvent e) => true;
+
+            public override bool OnSingleTapUp(MotionEvent e)
+            {
+                var meteringPointFactory = parent.PreviewView.MeteringPointFactory;
+                var focusPoint = meteringPointFactory.CreatePoint(e.GetX(), e.GetY());
+                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(parent.root)).Launch(
+                    new Function2(() =>
+                        parent.action.Emit(new CameraUiAction.Focus { meteringPoint = focusPoint }, parent)));
+                parent.ShowFocusPoint(e.GetX(), e.GetY());
+                return true;
+            }
+
+            public override bool OnDoubleTap(MotionEvent e)
+            {
+                parent.SwitchLens();
+                return true;
+            }
+        }
+
+        public class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener
+        {
+            public ScaleGestureListener(CameraExtensionsScreen parent) { this.parent = parent; }
+            CameraExtensionsScreen parent;
+
+            public override bool OnScale(ScaleGestureDetector detector)
+            {
+                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(parent.root)).Launch(
+                    new Function2(() =>
+                        parent.action.Emit(new CameraUiAction.Scale { scaleFactor = detector.ScaleFactor }, parent)));
+                return true;
+            }
+        }
+
+        public bool OnTouch(View v, MotionEvent e)
+        {
+            var didConsume = scaleGestureDetector.OnTouchEvent(e);
+            if (!scaleGestureDetector.IsInProgress)
+            {
+                didConsume = gestureDetector.OnTouchEvent(e);
+            }
+            return didConsume;
         }
 
         public void SetAvailableExtensions(List<CameraExtensionItem> extensions)
@@ -175,29 +239,29 @@ namespace CameraXExtensions
         public void ShowPhoto(Uri uri)
         {
             if (uri == null) return;
-            photoPreview.Visibility = ViewStates.Visible;
+            SetVisible(photoPreview, true);
             // photoPreview.Load(uri);
-            closePhotoPreview.Visibility = ViewStates.Visible;
+            SetVisible(closePhotoPreview, true);
         }
 
         public void HidePhoto()
         {
-            photoPreview.Visibility = ViewStates.Invisible;
-            closePhotoPreview.Visibility = ViewStates.Invisible;
-            extensionSelector.Visibility = ViewStates.Invisible;
+            SetVisible(photoPreview, false);
+            SetVisible(closePhotoPreview, false);
         }
 
         public void ShowCameraControls()
         {
-            cameraShutterButton.Visibility = ViewStates.Visible;
-            switchLensButton.Visibility = ViewStates.Visible;
-            extensionSelector.Visibility = ViewStates.Visible;
+            SetVisible(cameraShutterButton, true);
+            SetVisible(switchLensButton, true);
+            SetVisible(extensionSelector, true);
         }
 
         public void HideCameraControls()
         {
-            cameraShutterButton.Visibility = ViewStates.Invisible;
-            switchLensButton.Visibility = ViewStates.Invisible;
+            SetVisible(cameraShutterButton, false);
+            SetVisible(switchLensButton, false);
+            SetVisible(extensionSelector, false);
         }
 
         public void EnableCameraShutter(bool isEnabled)
@@ -217,12 +281,12 @@ namespace CameraXExtensions
 
         public void HidePermissionsRequest()
         {
-            permissionsRationaleContainer.Visibility = ViewStates.Invisible;
+            SetVisible(permissionsRationaleContainer, false);
         }
 
         public void ShowPermissionsRequest(bool shouldShowRationale)
         {
-            permissionsRationaleContainer.Visibility = ViewStates.Visible;
+            SetVisible(permissionsRationaleContainer, true);
             if (shouldShowRationale)
             {
                 permissionsRationale.Text =
@@ -242,6 +306,63 @@ namespace CameraXExtensions
             var middle = layoutManager.Width / 2;
             var dx = viewMiddle - middle;
             extensionSelector.SmoothScrollBy(dx, 0);
+        }
+
+        public void SwitchLens()
+        {
+            LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
+                new Function2(() =>
+                    action.Emit(new CameraUiAction.SwitchCameraClick(), this)));
+            switchLensButton.Animate().Rotation(180f);
+            switchLensButton.Animate().SetDuration(300L);
+            switchLensButton.Animate().SetListener(this);
+            switchLensButton.Animate().Start();
+        }
+
+        public void ShowFocusPoint(float x, float y)
+        {
+            View view = focusPointView;
+            var drawable = new FocusPointDrawable();
+            var strokeWidth = TypedValue.ApplyDimension(
+                ComplexUnitType.Dip,
+                3f,
+                context.Resources.DisplayMetrics
+            );
+            drawable.SetStrokeWidth(strokeWidth);
+
+            var alphaAnimation = new SpringAnimation(view, DynamicAnimation.Alpha, 1f);
+            alphaAnimation.Spring.SetStiffness(SpringStiffnessAlphaOut);
+            alphaAnimation.Spring.SetDampingRatio(SpringDampingRatio);
+
+            alphaAnimation.AddEndListener(this);
+
+            var scaleAnimationX = new SpringAnimation(view, DynamicAnimation.ScaleX, 1f);
+            alphaAnimation.Spring.SetStiffness(SpringStiffness);
+            alphaAnimation.Spring.SetDampingRatio(SpringDampingRatio);
+
+            var scaleAnimationY = new SpringAnimation(view, DynamicAnimation.ScaleY, 1f);
+            alphaAnimation.Spring.SetStiffness(SpringStiffness);
+            alphaAnimation.Spring.SetDampingRatio(SpringDampingRatio);
+
+            view.Background = drawable;
+            SetVisible(view, true);
+            view.TranslationX = x - view.Width / 2f;
+            view.TranslationY = y - view.Height / 2f;
+            view.Alpha = 0f;
+            view.ScaleX = 1.5f;
+            view.ScaleY = 1.5f;
+
+            alphaAnimation.Start();
+            scaleAnimationX.Start();
+            scaleAnimationY.Start();
+        }
+
+        public void OnAnimationEnd(DynamicAnimation animation, bool canceled, float value, float velocity)
+        {
+            var springForce = new SpringForce();
+            springForce.SetStiffness(SpringStiffnessAlphaOut);
+            springForce.SetDampingRatio(SpringForce.DampingRatioNoBouncy);
+            new SpringAnimation(focusPointView, DynamicAnimation.Alpha, 0f).Start();
         }
     }
 }

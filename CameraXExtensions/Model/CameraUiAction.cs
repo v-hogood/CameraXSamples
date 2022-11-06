@@ -1,3 +1,4 @@
+using AndroidX.Camera.Core;
 using AndroidX.Camera.Extensions;
 using Java.Lang;
 
@@ -13,10 +14,10 @@ namespace CameraXExtensions
         public sealed class ShutterButtonClick : CameraUiAction { };
         public sealed class ClosePhotoPreviewClick : CameraUiAction { };
         public sealed class SelectCameraExtension : CameraUiAction
-        {
-            public SelectCameraExtension(int extension) =>
-                Extension = extension;
-            public int Extension;
-        };
+            { public int Extension; };
+        public sealed class Focus : CameraUiAction
+            { public MeteringPoint meteringPoint; };
+        public sealed class Scale : CameraUiAction
+            { public float scaleFactor; };
     }
 }

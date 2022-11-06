@@ -4,6 +4,7 @@ using Android;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
+using AndroidX.Activity;
 using AndroidX.Activity.Result;
 using AndroidX.Activity.Result.Contract;
 using AndroidX.AppCompat.App;
@@ -11,10 +12,12 @@ using AndroidX.Camera.Extensions;
 using AndroidX.Core.App;
 using AndroidX.Lifecycle;
 using Java.Lang;
+using Kotlin;
 using Kotlin.Coroutines;
 using Kotlin.Jvm.Functions;
 using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
+using static System.Net.Mime.MediaTypeNames;
 
 //
 // Displays the camera preview with camera controls and available extensions. Tapping on the shutter
@@ -38,6 +41,23 @@ namespace CameraXExtensions
             [ExtensionMode.Bokeh] = Resource.String.camera_mode_bokeh,
             [ExtensionMode.None] = Resource.String.camera_mode_none,
         };
+
+        // handles back press if the current screen is the photo post capture screen
+        class PostCaptureBackPressedCallback : OnBackPressedCallback
+        {
+            public PostCaptureBackPressedCallback(MainActivity parent) : base(false)
+            { this.parent = parent; }
+            MainActivity parent;
+
+            public override void HandleOnBackPressed()
+            {
+                LifecycleOwnerKt.GetLifecycleScope(parent).Launch(
+                    new Function2(() => parent.ClosePhotoPreview()));
+            }
+        }
+        private PostCaptureBackPressedCallback postCaptureBackPressedCallback;
+
+        private CameraExtensionsScreen cameraExtensionsScreen;
 
         // view model for operating on the camera and capturing a photo
         private CameraExtensionsViewModel cameraExtensionsViewModel;
@@ -66,8 +86,6 @@ namespace CameraXExtensions
 
         public void ResumeWith(Object result) { }
 
-        CameraExtensionsScreen cameraExtensionsScreen;
-
         ActivityResultLauncher requestPermissionsLauncher;
 
         public class Function2 : Object, IFunction2
@@ -87,11 +105,20 @@ namespace CameraXExtensions
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
 
-            cameraExtensionsViewModel = new CameraExtensionsViewModel(Application);
+            cameraExtensionsViewModel = new ViewModelProvider(
+                this,
+                new CameraExtensionsViewModelFactory(
+                    Application,
+                    ImageCaptureRepository.Create(ApplicationContext)
+                )
+            ).Get(Class.FromType(typeof(CameraExtensionsViewModel))) as CameraExtensionsViewModel;
 
             // capture screen abstracts the UI logic and exposes simple functions on how to interact
             // with the UI layer.
             cameraExtensionsScreen = new CameraExtensionsScreen(FindViewById(Resource.Id.root));
+
+            postCaptureBackPressedCallback = new PostCaptureBackPressedCallback(this);
+            OnBackPressedDispatcher.AddCallback(this, postCaptureBackPressedCallback);
 
             // initialize the permission state flow with the current camera permission status
             permissionState = StateFlowKt.MutableStateFlow(GetCurrentPermissionState());
@@ -152,11 +179,7 @@ namespace CameraXExtensions
                 }
                 else if (action is CameraUiAction.ClosePhotoPreviewClick)
                 {
-                    cameraExtensionsScreen.HidePhoto();
-                    cameraExtensionsScreen.ShowCameraControls();
-                    cameraExtensionsViewModel.StartPreview(
-                        this, cameraExtensionsScreen.PreviewView
-                    );
+                    ClosePhotoPreview();
                 }
                 else if (action is CameraUiAction.RequestPermissionClick)
                 {
@@ -164,12 +187,23 @@ namespace CameraXExtensions
                         Manifest.Permission.Camera
                     );
                 }
+                else if (action is CameraUiAction.Focus)
+                {
+                    cameraExtensionsViewModel.Focus(
+                        (action as CameraUiAction.Focus).meteringPoint);
+                }
+                else if (action is CameraUiAction.Scale)
+                {
+                    cameraExtensionsViewModel.Scale(
+                        (action as CameraUiAction.Scale).scaleFactor);
+                }
             }
             else if (p0 is CaptureState)
             {
                 var state = p0 as CaptureState;
                 if (state is CaptureState.CaptureNotReady)
                 {
+                    postCaptureBackPressedCallback.Enabled = false;
                     cameraExtensionsScreen.HidePhoto();
                     cameraExtensionsScreen.EnableCameraShutter(true);
                     cameraExtensionsScreen.EnableSwitchLens(true);
@@ -186,9 +220,11 @@ namespace CameraXExtensions
                 }
                 else if (state is CaptureState.CaptureFinished)
                 {
+                    var uri = (state as CaptureState.CaptureFinished).OutputResults.SavedUri;
                     cameraExtensionsViewModel.StopPreview();
                     cameraExtensionsScreen.ShowPhoto(((CaptureState.CaptureFinished)state).OutputResults.SavedUri);
                     cameraExtensionsScreen.HideCameraControls();
+                    postCaptureBackPressedCallback.Enabled = (uri != null);
                 }
                 else if (state is CaptureState.CaptureFailed)
                 {
@@ -220,6 +256,7 @@ namespace CameraXExtensions
 
                 if (cameraUiState.CameraState == CameraState.NotReady)
                 {
+                    postCaptureBackPressedCallback.Enabled = false;
                     cameraExtensionsScreen.HidePhoto();
                     cameraExtensionsScreen.ShowCameraControls();
                     cameraExtensionsScreen.EnableCameraShutter(false);
@@ -256,6 +293,16 @@ namespace CameraXExtensions
         public Object Invoke(Object p0, Object p1, Object p2)
         {
             return new Kotlin.Pair(p0, p1);
+        }
+
+        private void ClosePhotoPreview()
+        {
+            postCaptureBackPressedCallback.Enabled = false;
+            cameraExtensionsScreen.HidePhoto();
+            cameraExtensionsScreen.ShowCameraControls();
+            cameraExtensionsViewModel.StartPreview(
+                this, cameraExtensionsScreen.PreviewView
+            );
         }
 
         private PermissionState GetCurrentPermissionState()

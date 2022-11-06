@@ -8,6 +8,7 @@ using AndroidX.Camera.Extensions;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.Core.Content;
+using AndroidX.Core.Net;
 using AndroidX.Lifecycle;
 using Java.IO;
 using Java.Lang;
@@ -32,11 +33,19 @@ namespace CameraXExtensions
         ImageCapture.IOnImageSavedCallback,
         IContinuation
     {
-        public CameraExtensionsViewModel(Application application) : base(application)
+        public CameraExtensionsViewModel(
+            Application application,
+            ImageCaptureRepository imageCaptureRepository
+        ) : base(application)
         {
+            this.application = application;
+            this.imageCaptureRepository = imageCaptureRepository;
+
             CameraUiState = cameraUiState;
             CaptureUiState = captureUiState;
         }
+        Application application;
+        ImageCaptureRepository imageCaptureRepository;
 
         public ICoroutineContext Context => ViewModelKt.GetViewModelScope(this).CoroutineContext;
 
@@ -44,6 +53,9 @@ namespace CameraXExtensions
 
         private ProcessCameraProvider cameraProvider;
         private ExtensionsManager extensionsManager;
+
+        private ICamera camera;
+        private File photoFile;
 
         private ImageCapture imageCapture = new ImageCapture.Builder()
             .SetTargetAspectRatio(AspectRatio.Ratio169)
@@ -88,11 +100,11 @@ namespace CameraXExtensions
                 var cameraSelector = CameraLensToSelector((int)currentCameraUiState.CameraLens);
 
                 // wait for the camera provider instance and extensions manager instance
-                var cameraProviderFuture = ProcessCameraProvider.GetInstance(Application as Application);
+                var cameraProviderFuture = ProcessCameraProvider.GetInstance(application);
                 cameraProviderFuture.AddListener(new Runnable(() =>
                 {
                     cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider;
-                    var extensionsManagerFuture = ExtensionsManager.GetInstanceAsync(Application as Application,
+                    var extensionsManagerFuture = ExtensionsManager.GetInstanceAsync(application,
                         new CameraProvider(cameraProvider));
                     extensionsManagerFuture.AddListener(new Runnable(() =>
                     {
@@ -156,7 +168,7 @@ namespace CameraXExtensions
                 .AddUseCase(preview)
                 .Build();
             cameraProvider.UnbindAll();
-            cameraProvider.BindToLifecycle(
+            camera = cameraProvider.BindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
                 useCaseGroup
@@ -228,7 +240,7 @@ namespace CameraXExtensions
             ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                     captureUiState.Emit(new CaptureState.CaptureStarted(), this)));
-            var photoFile = new File(GetCaptureStorageDirectory(), "test.jpg");
+            photoFile = imageCaptureRepository.CreateImageOutputFile();
             var metadata = new ImageCapture.Metadata() {
                 // Mirror image when using the front camera
                 ReversedHorizontal =
@@ -247,6 +259,10 @@ namespace CameraXExtensions
 
         public void OnImageSaved(ImageCapture.OutputFileResults outputFileResults)
         {
+            imageCaptureRepository.NotifyImageCreated(
+                application,
+                outputFileResults.SavedUri ?? UriKt.ToUri(photoFile)
+            );
             ViewModelKt.GetViewModelScope(this).Launch(
                 new Function2(() =>
                     captureUiState.Emit(new CaptureState.CaptureFinished(outputFileResults), this)));
@@ -278,6 +294,23 @@ namespace CameraXExtensions
             }));
         }
 
+        public void Focus(MeteringPoint meteringPoint)
+        {
+            if (camera == null) return;
+
+            var meteringAction = new FocusMeteringAction.Builder(meteringPoint).Build();
+            camera.CameraControl.StartFocusAndMetering(meteringAction);
+        }
+
+        public void Scale(float scaleFactor)
+        {
+            if (camera == null) return;
+
+            var currentZoomRatio = camera.CameraInfo.ZoomState.Value as IZoomState;
+            camera.CameraControl.SetZoomRatio(scaleFactor *
+                (currentZoomRatio != null ? currentZoomRatio.ZoomRatio : 1f));
+        }
+
         public CameraSelector CameraLensToSelector(int lensFacing) =>
             lensFacing switch
             {
@@ -285,17 +318,5 @@ namespace CameraXExtensions
                 CameraSelector.LensFacingBack => CameraSelector.DefaultBackCamera,
                 _ => throw new IllegalArgumentException("Invalid lens facing type: " + lensFacing)
             };
-
-        public File GetCaptureStorageDirectory()
-        {
-            // Get the pictures directory that's inside the app-specific directory on
-            // external storage.
-            var context = Application as CameraExtensionsApplication;
-
-            var file =
-                new File(context.GetExternalFilesDir(Environment.DirectoryPictures), "camera_extensions");
-            file.Mkdirs();
-            return file;
-        }
     }
 }

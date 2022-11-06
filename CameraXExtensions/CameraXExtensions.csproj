@@ -65,17 +65,20 @@
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Model\PermissionState.cs" />
-    <Compile Include="Model\CameraUiAction.cs" />
-    <Compile Include="Model\CameraUiState.cs" />
     <Compile Include="Adapter\CameraExtensionsSelector.cs" />
     <Compile Include="Adapter\CameraExtensionItem.cs" />
     <Compile Include="App\CameraExtensionsApplication.cs" />
+    <Compile Include="Model\PermissionState.cs" />
+    <Compile Include="Model\CameraUiAction.cs" />
+    <Compile Include="Model\CameraUiState.cs" />
+    <Compile Include="Repository\ImageCaptureRepository.cs" />
     <Compile Include="Ui\CameraExtensionsScreen.cs" />
     <Compile Include="Ui\CenterItemSnapHelper.cs" />
+    <Compile Include="Ui\FocusPointDrawable.cs" />
     <Compile Include="Ui\OffsetCenterItemDecoration.cs" />
     <Compile Include="Ui\ViewKtx.cs" />
     <Compile Include="ViewModel\CameraExtensionsViewModel.cs" />
+    <Compile Include="ViewModel\CameraExtensionsViewModelFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -96,6 +99,7 @@
     <AndroidResource Include="Resources\values-night\themes.xml" />
     <AndroidResource Include="Resources\xml\backup_rules.xml" />
     <AndroidResource Include="Resources\xml\data_extraction_rules.xml" />
+    <AndroidResource Include="Resources\xml\file_paths.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher_round.xml" />
     <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher.webp" />
