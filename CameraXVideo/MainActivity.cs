@@ -16,7 +16,6 @@ namespace CameraXVideo
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
 
             SetContentView(Resource.Layout.activity_main);
             container = FindViewById(Resource.Id.fragment_container) as FrameLayout;
