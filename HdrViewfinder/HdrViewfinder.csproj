@@ -52,11 +52,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HdrViewfinderActivity.cs" />
@@ -156,10 +152,10 @@
     </AndroidResource>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.UI" Version="1.0.0.15" />
-    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.5.0" />
+    <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.UI" Version="1.0.0.16" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.5.1.1" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.6.1.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="HdrMerge\HdrMerge.csproj">

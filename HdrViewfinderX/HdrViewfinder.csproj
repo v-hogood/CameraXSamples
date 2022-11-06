@@ -52,11 +52,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HdrViewfinderActivity.cs" />
@@ -146,16 +142,16 @@
     </AndroidResource>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.2" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Concurrent.Futures" Version="1.1.0.9" />
-    <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.UI" Version="1.0.0.15" />
-    <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.Utils" Version="1.0.0.14" />
+    <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.3" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Concurrent.Futures" Version="1.1.0.10" />
+    <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.UI" Version="1.0.0.16" />
+    <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.Utils" Version="1.0.0.15" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.6.1.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.1" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

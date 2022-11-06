@@ -53,11 +53,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CameraActivity.cs" />
@@ -123,18 +120,18 @@
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.2" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.ConstraintLayout" Version="2.1.4.1" />
+    <PackageReference Include="Xamarin.AndroidX.Browser" Version="1.4.0.3" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.ConstraintLayout" Version="2.1.4.2" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.6.1.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.1" />
     <PackageReference Include="Xamarin.Google.FlatBuffers" Version="2.0.3" />
-    <PackageReference Include="Xamarin.TensorFlow.Lite" Version="2.6.0.1" />
-    <PackageReference Include="Xamarin.TensorFlow.Lite.Support" Version="0.4.1" />
-    <PackageReference Include="Xamarin.TensorFlow.Lite.Support.Metadata" Version="0.4.1" />
+    <PackageReference Include="Xamarin.TensorFlow.Lite" Version="2.6.0.2" />
+    <PackageReference Include="Xamarin.TensorFlow.Lite.Support" Version="0.4.2" />
+    <PackageReference Include="Xamarin.TensorFlow.Lite.Support.Metadata" Version="0.4.2" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\lite-model_ssd_mobilenet_v1_1_metadata_2.tflite" />
