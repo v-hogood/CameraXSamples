@@ -3,6 +3,7 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.Fragment.App;
 using Bumptech.Glide;
+using Java.IO;
 
 namespace CameraXBasic.Fragments
 {
@@ -25,13 +26,13 @@ namespace CameraXBasic.Fragments
             }
             else
             {
-                Glide.With(view).Load(new Java.IO.File(filename)).Into(view as ImageView);
+                Glide.With(view).Load(new File(filename)).Into(view as ImageView);
             }
         }
 
         private const string FileNameKey = "file_name";
 
-        public static PhotoFragment Create(Java.IO.File image)
+        public static PhotoFragment Create(File image)
         {
             var bundle = new Bundle();
             bundle.PutString(FileNameKey, image.AbsolutePath);

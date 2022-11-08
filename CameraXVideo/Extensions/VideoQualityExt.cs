@@ -74,11 +74,11 @@ namespace CameraXVideo
             };
         }
 
-        static System.IntPtr class_ref = JNIEnv.FindClass("androidx/camera/video/AutoValue_Quality_ConstantQuality");
-        static System.IntPtr id_getValue;
+        static IntPtr class_ref = JNIEnv.FindClass("androidx/camera/video/AutoValue_Quality_ConstantQuality");
+        static IntPtr id_getValue;
         public static CamcorderQuality GetValue(this Quality quality)
         {
-            if (id_getValue == System.IntPtr.Zero)
+            if (id_getValue == IntPtr.Zero)
                 id_getValue = JNIEnv.GetMethodID(class_ref, "getValue", "()I");
 
             return (CamcorderQuality) JNIEnv.CallIntMethod(((IJavaObject)quality).Handle, id_getValue);

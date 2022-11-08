@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Android.Content;
+using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Hardware.Display;
@@ -20,12 +21,20 @@ using AndroidX.Core.Content;
 using AndroidX.Fragment.App;
 using AndroidX.Lifecycle;
 using AndroidX.LocalBroadcastManager.Content;
-using AndroidX.Navigation;
 using AndroidX.Window.Layout;
 using Bumptech.Glide;
 using Bumptech.Glide.Request;
 using CameraXBasic.Utils;
+using Java.IO;
 using Java.Lang;
+using Java.Nio;
+using Java.Text;
+using Java.Util;
+using Java.Util.Concurrent;
+using File = Java.IO.File;
+using IObserver = AndroidX.Lifecycle.IObserver;
+using Navigation = AndroidX.Navigation.Navigation;
+using Path = System.IO.Path;
 
 // Helper type alias used for analysis use case callbacks
 delegate void LumaListener(double luma);
@@ -43,11 +52,11 @@ namespace CameraXBasic.Fragments
         View.IOnClickListener,
         MediaScannerConnection.IOnScanCompletedListener,
         ImageCapture.IOnImageSavedCallback,
-        Java.IO.IFileFilter
+        IFileFilter
     {
         private ConstraintLayout container;
         private PreviewView viewFinder;
-        private Java.IO.File outputDirectory;
+        private File outputDirectory;
         private LocalBroadcastManager broadcastManager;
 
         private int displayId = -1;
@@ -62,7 +71,7 @@ namespace CameraXBasic.Fragments
         private DisplayManager displayManager => RequireContext().GetSystemService(Context.DisplayService) as DisplayManager;
 
         // Blocking camera operations are performed using this executor
-        private Java.Util.Concurrent.IExecutorService cameraExecutor;
+        private IExecutorService cameraExecutor;
 
         private VolumeDownReceiver volumeDownReceiver;
 
@@ -165,7 +174,7 @@ namespace CameraXBasic.Fragments
             viewFinder = container.FindViewById<PreviewView>(Resource.Id.view_finder);
 
             // Initialize our background executor
-            cameraExecutor = Java.Util.Concurrent.Executors.NewSingleThreadExecutor();
+            cameraExecutor = Executors.NewSingleThreadExecutor();
 
             volumeDownReceiver = new VolumeDownReceiver(this);
 
@@ -205,7 +214,7 @@ namespace CameraXBasic.Fragments
         //
         // NOTE: The flag is supported starting in Android 8 but there still is a small flash on the
         // screen for devices that run Android 9 or below.
-        public override void OnConfigurationChanged(Android.Content.Res.Configuration newConfig)
+        public override void OnConfigurationChanged(Configuration newConfig)
         {
             base.OnConfigurationChanged(newConfig);
 
@@ -220,7 +229,7 @@ namespace CameraXBasic.Fragments
         private void SetUpCamera()
         {
             var cameraProviderFuture = ProcessCameraProvider.GetInstance(RequireContext());
-            cameraProviderFuture.AddListener(new Java.Lang.Runnable(() =>
+            cameraProviderFuture.AddListener(new Runnable(() =>
             {
                 // CameraProvider
                 cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider;
@@ -231,7 +240,7 @@ namespace CameraXBasic.Fragments
                 else if (HasFrontCamera())
                     lensFacing = CameraSelector.LensFacingFront;
                 else
-                    throw new Java.Lang.IllegalStateException("Back and front camera are unavailable");
+                    throw new IllegalStateException("Back and front camera are unavailable");
 
                 // Enable or disable switching between cameras
                 UpdateCameraSwitchButton();
@@ -255,7 +264,7 @@ namespace CameraXBasic.Fragments
 
             // CameraProvider
             if (cameraProvider == null)
-                throw new Java.Lang.IllegalStateException("Camera initialization failed.");
+                throw new IllegalStateException("Camera initialization failed.");
 
             // CameraSelector
             var cameraSelector = (new CameraSelector.Builder()).RequireLensFacing(lensFacing).Build();
@@ -318,7 +327,7 @@ namespace CameraXBasic.Fragments
                 preview?.SetSurfaceProvider(viewFinder.SurfaceProvider);
                 ObserveCameraState(camera?.CameraInfo);
             }
-            catch (Java.Lang.Exception exc)
+            catch (Exception exc)
             {
                 Log.Error(Tag, "Use case binding failed: " + exc);
             }
@@ -445,17 +454,17 @@ namespace CameraXBasic.Fragments
         //  @return suitable aspect ratio
         private int AspectRatio(int width, int height)
         {
-            var previewRatio = (double) System.Math.Max(width, height) / System.Math.Min(width, height);
-            if (System.Math.Abs(previewRatio - Ratio4To3Value) <= System.Math.Abs(previewRatio - Ratio16To9Value))
+            var previewRatio = (double) Math.Max(width, height) / Math.Min(width, height);
+            if (Math.Abs(previewRatio - Ratio4To3Value) <= Math.Abs(previewRatio - Ratio16To9Value))
             {
                 return AndroidX.Camera.Core.AspectRatio.Ratio43;
             }
             return AndroidX.Camera.Core.AspectRatio.Ratio169;
         }
 
-        public bool Accept(Java.IO.File file)
+        public bool Accept(File file)
         {
-            return GalleryFragment.ExtensionWhitelist.Contains(System.IO.Path.GetExtension(file.Path).ToLower());
+            return GalleryFragment.ExtensionWhitelist.Contains(Path.GetExtension(file.Path).ToLower());
         }
 
         // Method used to re-draw the camera UI controls, called every time configuration changes.
@@ -470,7 +479,7 @@ namespace CameraXBasic.Fragments
             // In the background, load latest photo taken (if any) for gallery thumbnail
             Task.Run(() =>
             {
-                Java.IO.File[] files = outputDirectory.ListFiles(this);
+                File[] files = outputDirectory.ListFiles(this);
                 SetGalleryThumbnail(Uri.FromFile(files.Last()));
             });
 
@@ -490,7 +499,7 @@ namespace CameraXBasic.Fragments
             controls.FindViewById<ImageButton>(Resource.Id.photo_view_button).SetOnClickListener(this);
         }
 
-        private Java.IO.File photoFile;
+        private File photoFile;
 
         public void OnClick(View v)
         {
@@ -583,7 +592,7 @@ namespace CameraXBasic.Fragments
             // unnecessary but otherwise other apps will not be able to access our
             // images unless we scan them using [MediaScannerConnection]
             var mimeType = MimeTypeMap.Singleton
-                .GetMimeTypeFromExtension(System.IO.Path.GetExtension(savedUri.Path));
+                .GetMimeTypeFromExtension(Path.GetExtension(savedUri.Path));
 
             MediaScannerConnection.ScanFile(
                 Context,
@@ -630,7 +639,7 @@ namespace CameraXBasic.Fragments
         // <p>All we need to do is override the function `analyze` with our desired operations. Here,
         // we compute the average luminosity of the image by looking at the Y plane of the YUV frame.
         //
-        private class LuminosityAnalyzer : Java.Lang.Object, ImageAnalysis.IAnalyzer
+        private class LuminosityAnalyzer : Object, ImageAnalysis.IAnalyzer
         {
             private int frameCounter = 0;
             private int frameRateWindow = 8;
@@ -653,7 +662,7 @@ namespace CameraXBasic.Fragments
             }
 
             // Helper extension function used to extract a byte array from an image plane buffer
-            void ToByteArray(Java.Nio.ByteBuffer byteBuffer)
+            void ToByteArray(ByteBuffer byteBuffer)
             {
                 byteBuffer.Rewind();    // Rewind the buffer to zero
                 if (data == null || data.Length != byteBuffer.Remaining())
@@ -688,7 +697,7 @@ namespace CameraXBasic.Fragments
                 }
 
                 // Keep track of frames analyzed
-                var currentTime = Java.Lang.JavaSystem.CurrentTimeMillis();
+                var currentTime = JavaSystem.CurrentTimeMillis();
                 frameTimestamps.Enqueue(currentTime);
 
                 // Compute the FPS using a moving average
@@ -696,7 +705,7 @@ namespace CameraXBasic.Fragments
                 var timestampFirst = frameTimestamps.First();
                 var timestampLast = frameTimestamps.Last();
                 framesPerSecond = 1.0 / ((timestampLast - timestampFirst) /
-                    System.Math.Max(1, frameTimestamps.Count - 1)) * 1000.0;
+                    Math.Max(1, frameTimestamps.Count - 1)) * 1000.0;
                 if (++frameCounter % frameRateWindow == 0)
                 {
                     Log.Debug(Tag, "Frames per second: " + framesPerSecond.ToString("0.00"));
@@ -738,10 +747,10 @@ namespace CameraXBasic.Fragments
         private const double Ratio16To9Value = 16.0 / 9.0;
 
         // Helper function used to create a timestamped file
-        private Java.IO.File CreateFile(Java.IO.File baseFolder, string format, string extension)
+        private File CreateFile(File baseFolder, string format, string extension)
         {
-            return new Java.IO.File(baseFolder, new Java.Text.SimpleDateFormat(format, Java.Util.Locale.Us)
-                .Format(Java.Lang.JavaSystem.CurrentTimeMillis()) + extension);
+            return new File(baseFolder, new SimpleDateFormat(format, Locale.Us)
+                .Format(JavaSystem.CurrentTimeMillis()) + extension);
         }
     }
 }

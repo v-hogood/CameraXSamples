@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Android.Hardware.Camera2;
 using AndroidX.Camera.Core;
-using AndroidX.Camera.Extensions;
 using Java.Lang;
 
 namespace CameraXExtensions

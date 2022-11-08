@@ -9,6 +9,7 @@
 //   - CameraX notify this app that the recording is indeed stopped, with the Finalize event.
 //   - this app starts VideoViewer fragment to view the captured result.
 //
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -39,6 +40,10 @@ using Java.Util.Concurrent;
 using Kotlin.Coroutines;
 using Kotlin.Jvm.Functions;
 using Xamarin.KotlinX.Coroutines;
+using static AndroidX.Lifecycle.LifecycleOwnerKt;
+using Exception = Java.Lang.Exception;
+using Object = Java.Lang.Object;
+using Orientation = Android.Content.Res.Orientation;
 using VideoCapture = AndroidX.Camera.Video.VideoCapture;
 
 namespace CameraXVideo
@@ -106,7 +111,7 @@ namespace CameraXVideo
                 var orientation = Resources.Configuration.Orientation;
                 (previewView.LayoutParameters as ConstraintLayout.LayoutParams).
                     DimensionRatio = quality.GetAspectRatioString(
-                        (orientation == Android.Content.Res.Orientation.Portrait));
+                        (orientation == Orientation.Portrait));
 
                 var preview = new Preview.Builder()
                     .SetTargetAspectRatio(quality.GetAspectRatio())
@@ -192,7 +197,7 @@ namespace CameraXVideo
             if (videoRecordEvent is VideoRecordEvent.Finalize)
             {
                 // display the captured video
-                LifecycleOwnerKt.GetLifecycleScope(this).Launch(() =>
+                GetLifecycleScope(this).Launch(() =>
                 {
                     var args = new Bundle();
                     args.PutString("uri", ((VideoRecordEvent.Finalize)videoRecordEvent).OutputResults.OutputUri.ToString());
@@ -282,7 +287,7 @@ namespace CameraXVideo
 
             enumerationDeferred.WaitAsync().ContinueWith((t) =>
             {
-                LifecycleOwnerKt.GetLifecycleScope(ViewLifecycleOwner).Launch(() =>
+                GetLifecycleScope(ViewLifecycleOwner).Launch(() =>
                 {
                     InitializeQualitySectionsUI();
 
@@ -309,7 +314,7 @@ namespace CameraXVideo
                 qualityIndex = DefaultQualityIdx;
                 InitializeQualitySectionsUI();
                 EnableUI(false);
-                LifecycleOwnerKt.GetLifecycleScope(ViewLifecycleOwner).Launch(() =>
+                GetLifecycleScope(ViewLifecycleOwner).Launch(() =>
                     BindCaptureUsecase());
             }
             else if (v.Id == Resource.Id.audio_selection)
@@ -554,7 +559,7 @@ namespace CameraXVideo
 
                 // rebind the use cases to put the new QualitySelection in action.
                 parent.EnableUI(false);
-                LifecycleOwnerKt.GetLifecycleScope(parent.ViewLifecycleOwner).Launch(() =>
+                GetLifecycleScope(parent.ViewLifecycleOwner).Launch(() =>
                     parent.BindCaptureUsecase());
             }
         }
@@ -649,8 +654,8 @@ namespace CameraXVideo
     {
         public class Function2 : Object, IFunction2
         {
-            System.Action action;
-            public Function2(System.Action action) => this.action = action;
+            Action action;
+            public Function2(Action action) => this.action = action;
             public Object Invoke(Object p0, Object p1)
             {
                 action();
@@ -658,19 +663,19 @@ namespace CameraXVideo
             }
         }
 
-        static System.IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
-        static System.IntPtr id_launch;
-        public static Object Launch(this ICoroutineScope scope, System.Action action)
+        static IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
+        static IntPtr id_launch;
+        public static Object Launch(this ICoroutineScope scope, Action action)
         {
             var context = EmptyCoroutineContext.Instance;
             var start = CoroutineStart.Default;
             var block = new Function2(action);
 
-            if (id_launch == System.IntPtr.Zero)
+            if (id_launch == IntPtr.Zero)
                 id_launch = JNIEnv.GetStaticMethodID(class_ref,
                     "launch", "(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;");
 
-            System.IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
+            IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
                 new JValue(scope), new JValue(context), new JValue(start), new JValue(block));
             return Object.GetObject<Object>(obj, JniHandleOwnership.TransferLocalRef);
         }

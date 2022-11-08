@@ -34,7 +34,7 @@ namespace CameraXExtensions
 
         internal class ItemCallback : DiffUtil.ItemCallback
         {
-            public override bool AreItemsTheSame(Java.Lang.Object p0, Java.Lang.Object p1)
+            public override bool AreItemsTheSame(Object p0, Object p1)
             {
                 CameraExtensionItem oldItem = p0 as CameraExtensionItem;
                 CameraExtensionItem newItem = p1 as CameraExtensionItem;

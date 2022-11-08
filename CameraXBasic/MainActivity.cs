@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.OS;
 using Android.Runtime;
 using Android.Views;
@@ -8,6 +9,7 @@ using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.LocalBroadcastManager.Content;
+using Java.IO;
 
 namespace CameraXBasic
 {
@@ -72,17 +74,17 @@ namespace CameraXBasic
             }
         }
 
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
+        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
 
         // Use external media if it is available, our app's file directory otherwise
-        public static Java.IO.File GetOutputDirectory(Context context)
+        public static File GetOutputDirectory(Context context)
         {
             var appContext = context.ApplicationContext;
-            var mediaDir = new Java.IO.File(context.GetExternalMediaDirs().FirstOrDefault(),
+            var mediaDir = new File(context.GetExternalMediaDirs().FirstOrDefault(),
                 appContext.GetString(Resource.String.app_name));
             mediaDir?.Mkdirs();
             return mediaDir != null && mediaDir.Exists() ?

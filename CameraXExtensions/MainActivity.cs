@@ -12,12 +12,14 @@ using AndroidX.Camera.Extensions;
 using AndroidX.Core.App;
 using AndroidX.Lifecycle;
 using Java.Lang;
-using Kotlin;
 using Kotlin.Coroutines;
 using Kotlin.Jvm.Functions;
-using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
-using static System.Net.Mime.MediaTypeNames;
+using static AndroidX.Lifecycle.LifecycleOwnerKt;
+using static AndroidX.Lifecycle.RepeatOnLifecycleKt;
+using static CameraXExtensions.BuildersKtx;
+using static Xamarin.KotlinX.Coroutines.Flow.FlowKt;
+using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
 
 //
 // Displays the camera preview with camera controls and available extensions. Tapping on the shutter
@@ -32,6 +34,10 @@ namespace CameraXExtensions
         IFunction2,
         IFunction3
     {
+        public ICoroutineContext Context => GetLifecycleScope(this).CoroutineContext;
+
+        public void ResumeWith(Object result) { }
+
         private IDictionary<int, int> extensionName = new Dictionary<int, int>
         {
             [ExtensionMode.Auto] = Resource.String.camera_mode_auto,
@@ -51,8 +57,8 @@ namespace CameraXExtensions
 
             public override void HandleOnBackPressed()
             {
-                LifecycleOwnerKt.GetLifecycleScope(parent).Launch(
-                    new Function2(() => parent.ClosePhotoPreview()));
+                GetLifecycleScope(parent).Launch(() =>
+                    parent.ClosePhotoPreview());
             }
         }
         private PostCaptureBackPressedCallback postCaptureBackPressedCallback;
@@ -63,46 +69,28 @@ namespace CameraXExtensions
         private CameraExtensionsViewModel cameraExtensionsViewModel;
 
         // monitors changes in camera permission state
-        private IMutableStateFlow permissionState = StateFlowKt.MutableStateFlow(new PermissionState());
+        private IMutableStateFlow permissionState = MutableStateFlow(new PermissionState());
+
+        ActivityResultLauncher requestPermissionsLauncher;
 
         public void OnActivityResult(Object result)
         {
             var isGranted = result as Boolean;
             if (isGranted.BooleanValue())
             {
-                LifecycleOwnerKt.GetLifecycleScope(this).Launch(
-                    new Function2(() =>
-                        permissionState.Emit(new PermissionState.Granted(), this)));
+                GetLifecycleScope(this).Launch(() =>
+                    permissionState.Emit(new PermissionState.Granted(), this));
             }
             else
             {
-                LifecycleOwnerKt.GetLifecycleScope(this).Launch(
-                    new Function2(() =>
-                        permissionState.Emit(new PermissionState.Denied(true), this)));
-            }
-        }
-
-        public ICoroutineContext Context => LifecycleOwnerKt.GetLifecycleScope(this).CoroutineContext;
-
-        public void ResumeWith(Object result) { }
-
-        ActivityResultLauncher requestPermissionsLauncher;
-
-        public class Function2 : Object, IFunction2
-        {
-            System.Action action;
-            public Function2(System.Action action) => this.action = action;
-            public Object Invoke(Object p0, Object p1)
-            {
-                action();
-                return null;
+                GetLifecycleScope(this).Launch(() =>
+                    permissionState.Emit(new PermissionState.Denied(true), this));
             }
         }
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_main);
 
             cameraExtensionsViewModel = new ViewModelProvider(
@@ -121,31 +109,28 @@ namespace CameraXExtensions
             OnBackPressedDispatcher.AddCallback(this, postCaptureBackPressedCallback);
 
             // initialize the permission state flow with the current camera permission status
-            permissionState = StateFlowKt.MutableStateFlow(GetCurrentPermissionState());
+            permissionState = MutableStateFlow(GetCurrentPermissionState());
 
             requestPermissionsLauncher =
                 RegisterForActivityResult(new ActivityResultContracts.RequestPermission(), this);
 
-            LifecycleOwnerKt.GetLifecycleScope(this).Launch(
-                new Function2(() =>
-                    RepeatOnLifecycleKt.RepeatOnLifecycle(this, Lifecycle.State.Resumed,
-                        new Function2(() =>
-                            // check the current permission state every time upon the activity is resumed
-                            permissionState.Emit(GetCurrentPermissionState(), this)), this)));
+            GetLifecycleScope(this).Launch(() =>
+                RepeatOnLifecycle(this, Lifecycle.State.Resumed,
+                    new Function2(() =>
+                        // check the current permission state every time upon the activity is resumed
+                        permissionState.Emit(GetCurrentPermissionState(), this)), this));
 
             // Consumes actions emitted by the UI and performs the appropriate operation associated with
             // the view model or permission flow.
             // Note that this flow is a shared flow and will not emit the last action unlike the state
             // flows exposed by the view model for consuming UI state.
-            LifecycleOwnerKt.GetLifecycleScope(this).Launch(
-                new Function2(() =>
-                    FlowKt.CollectLatest(cameraExtensionsScreen.Action, this, this)));
+            GetLifecycleScope(this).Launch(() =>
+                CollectLatest(cameraExtensionsScreen.Action, this, this));
 
             // Consume state emitted by the view model to render the Photo Capture state.
             // Upon collecting this state, the last emitted state will be immediately received.
-            LifecycleOwnerKt.GetLifecycleScope(this).Launch(
-               new Function2(() =>
-                   FlowKt.CollectLatest(cameraExtensionsViewModel.CaptureUiState, this, this)));
+            GetLifecycleScope(this).Launch(() =>
+                CollectLatest(cameraExtensionsViewModel.CaptureUiState, this, this));
 
             // Because camera state is dependent on the camera permission status, we combine both camera
             // UI state and permission state such that each emission accurately captures the current
@@ -153,11 +138,10 @@ namespace CameraXExtensions
             // The camera permission is always checked to see if it's granted. If it isn't then stop
             // interacting with the camera and display the permission request screen. The user can tap
             // on "Turn On" to request permissions.
-            LifecycleOwnerKt.GetLifecycleScope(this).Launch(
-                new Function2(() =>
-                    FlowKt.CollectLatest(
-                        FlowKt.Combine(permissionState, cameraExtensionsViewModel.CameraUiState, this),
-                        this, this)));
+            GetLifecycleScope(this).Launch(() =>
+                CollectLatest(
+                    Combine(permissionState, cameraExtensionsViewModel.CameraUiState, this),
+                    this, this));
         }
 
         public Object Invoke(Object p0, Object p1)

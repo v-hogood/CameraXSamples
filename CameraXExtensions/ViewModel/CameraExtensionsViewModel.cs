@@ -2,20 +2,21 @@ using System.Collections.Generic;
 using System.Linq;
 using Android.App;
 using Android.Content;
-using Android.OS;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Extensions;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.Core.Content;
-using AndroidX.Core.Net;
 using AndroidX.Lifecycle;
 using Java.IO;
 using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
-using static CameraXExtensions.MainActivity;
+using static AndroidX.Core.Net.UriKt;
+using static AndroidX.Lifecycle.ViewModelKt;
+using static Xamarin.KotlinX.Coroutines.ExecutorsKt;
+using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
 
 namespace CameraXExtensions
 {
@@ -47,7 +48,7 @@ namespace CameraXExtensions
         Application application;
         ImageCaptureRepository imageCaptureRepository;
 
-        public ICoroutineContext Context => ViewModelKt.GetViewModelScope(this).CoroutineContext;
+        public ICoroutineContext Context => GetViewModelScope(this).CoroutineContext;
 
         public void ResumeWith(Object result) { }
 
@@ -65,8 +66,8 @@ namespace CameraXExtensions
             .SetTargetAspectRatio(AspectRatio.Ratio169)
             .Build();
 
-        private IMutableStateFlow cameraUiState = StateFlowKt.MutableStateFlow(new CameraUiState());
-        private IMutableStateFlow captureUiState = StateFlowKt.MutableStateFlow(new CaptureState.CaptureNotReady());
+        private IMutableStateFlow cameraUiState = MutableStateFlow(new CameraUiState());
+        private IMutableStateFlow captureUiState = MutableStateFlow(new CaptureState.CaptureNotReady());
 
         public IFlow CameraUiState;
         public IFlow CaptureUiState;
@@ -91,8 +92,7 @@ namespace CameraXExtensions
         //
         public void InitializeCamera(Context context)
         {
-            ViewModelKt.GetViewModelScope(this).Launch(
-            new Function2(() =>
+            GetViewModelScope(this).Launch(() =>
             {
                 var currentCameraUiState = cameraUiState.Value as CameraUiState;
 
@@ -143,7 +143,7 @@ namespace CameraXExtensions
                         cameraUiState.Emit(newCameraUiState, this);
                     }), ContextCompat.GetMainExecutor(context));
                 }), ContextCompat.GetMainExecutor(context));
-            }));
+            });
         }
 
         //
@@ -175,14 +175,13 @@ namespace CameraXExtensions
             );
             preview.SetSurfaceProvider(previewView.SurfaceProvider);
 
-            ViewModelKt.GetViewModelScope(this).Launch(
-            new Function2(() =>
+            GetViewModelScope(this).Launch(() =>
             {
                 if ((cameraUiState.Value as CameraUiState).CameraState != CameraState.Ready)
                     cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.Ready },
                         this);
                 captureUiState.Emit(new CaptureState.CaptureReady(), this);
-            }));
+            });
         }
 
         //
@@ -191,9 +190,8 @@ namespace CameraXExtensions
         public void StopPreview()
         {
             preview.SetSurfaceProvider(null);
-            ViewModelKt.GetViewModelScope(this).Launch(
-                new Function2(() =>
-                    cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.PreviewStopped }, this)));
+            GetViewModelScope(this).Launch(() =>
+                cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.PreviewStopped }, this));
         }
 
         //
@@ -213,8 +211,7 @@ namespace CameraXExtensions
                     new CameraUiState(currentCameraUiState) { CameraLens = CameraSelector.LensFacingFront } :
                     new CameraUiState(currentCameraUiState) { CameraLens = CameraSelector.LensFacingBack };
 
-                ViewModelKt.GetViewModelScope(this).Launch(
-                new Function2(() =>
+                GetViewModelScope(this).Launch(() =>
                 {
                     cameraUiState.Emit(
                         new CameraUiState(newCameraUiState)
@@ -223,7 +220,7 @@ namespace CameraXExtensions
                         }, this
                     );
                     captureUiState.Emit(new CaptureState.CaptureNotReady(), this);
-                }));
+                });
             }
         }
 
@@ -237,9 +234,8 @@ namespace CameraXExtensions
         //
         public void CapturePhoto()
         {
-            ViewModelKt.GetViewModelScope(this).Launch(
-                new Function2(() =>
-                    captureUiState.Emit(new CaptureState.CaptureStarted(), this)));
+            GetViewModelScope(this).Launch(() =>
+                captureUiState.Emit(new CaptureState.CaptureStarted(), this));
             photoFile = imageCaptureRepository.CreateImageOutputFile();
             var metadata = new ImageCapture.Metadata() {
                 // Mirror image when using the front camera
@@ -253,7 +249,7 @@ namespace CameraXExtensions
 
             imageCapture.TakePicture(
                 outputFileOptions,
-                ExecutorsKt.AsExecutor(Dispatchers.Default),
+                AsExecutor(Dispatchers.Default),
                 this);
         }
 
@@ -261,18 +257,16 @@ namespace CameraXExtensions
         {
             imageCaptureRepository.NotifyImageCreated(
                 application,
-                outputFileResults.SavedUri ?? UriKt.ToUri(photoFile)
+                outputFileResults.SavedUri ?? ToUri(photoFile)
             );
-            ViewModelKt.GetViewModelScope(this).Launch(
-                new Function2(() =>
-                    captureUiState.Emit(new CaptureState.CaptureFinished(outputFileResults), this)));
+            GetViewModelScope(this).Launch(() =>
+                captureUiState.Emit(new CaptureState.CaptureFinished(outputFileResults), this));
         }
 
         public void OnError(ImageCaptureException exception)
         {
-            ViewModelKt.GetViewModelScope(this).Launch(
-                new Function2(() =>
-                    captureUiState.Emit(new CaptureState.CaptureFailed(exception), this)));
+            GetViewModelScope(this).Launch(() =>
+                captureUiState.Emit(new CaptureState.CaptureFailed(exception), this));
         }
 
         //
@@ -280,8 +274,7 @@ namespace CameraXExtensions
         //
         public void SetExtensionMode(int extensionMode)
         {
-            ViewModelKt.GetViewModelScope(this).Launch(
-            new Function2(() =>
+            GetViewModelScope(this).Launch(() =>
             {
                 cameraUiState.Emit(
                     new CameraUiState((CameraUiState)cameraUiState.Value)
@@ -291,7 +284,7 @@ namespace CameraXExtensions
                     }, this
                 );
                 captureUiState.Emit(new CaptureState.CaptureNotReady(), this);
-            }));
+            });
         }
 
         public void Focus(MeteringPoint meteringPoint)

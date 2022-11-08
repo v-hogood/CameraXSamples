@@ -1,5 +1,4 @@
 using AndroidX.Camera.Core;
-using AndroidX.Camera.Extensions;
 using Java.Lang;
 
 namespace CameraXExtensions

@@ -1,5 +1,4 @@
 using Android.Content;
-using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using Android.Views.Animations;

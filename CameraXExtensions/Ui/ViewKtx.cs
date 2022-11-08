@@ -1,15 +1,12 @@
-using System.Runtime.InteropServices;
+using System;
 using Android.Runtime;
 using Android.Views;
-using AndroidX.Camera.Core;
 using AndroidX.Core.View;
-using AndroidX.Lifecycle;
-using Java.Interop;
 using Java.Lang;
-using Java.Util.Concurrent;
 using Kotlin.Coroutines;
 using Kotlin.Jvm.Functions;
 using Xamarin.KotlinX.Coroutines;
+using Object = Java.Lang.Object;
 
 namespace CameraXExtensions
 {
@@ -21,7 +18,7 @@ namespace CameraXExtensions
         //
         // @param action The action to apply when the view is laid out
         //
-        public static void DoOnLaidOut(this View view, System.Action action)
+        public static void DoOnLaidOut(this View view, Action action)
         {
             if (view.IsAttachedToWindow && ViewCompat.IsLaidOut(view))
             {
@@ -35,12 +32,12 @@ namespace CameraXExtensions
         }
     }
 
-    public class OnGlobalLayoutListener : Java.Lang.Object,
+    public class OnGlobalLayoutListener : Object,
         ViewTreeObserver.IOnGlobalLayoutListener
     {
         View view;
-        System.Action action;
-        public OnGlobalLayoutListener(View view, System.Action action) =>
+        Action action;
+        public OnGlobalLayoutListener(View view, Action action) =>
             (this.view, this.action) = (view, action);
         public void OnGlobalLayout()
         {
@@ -51,18 +48,30 @@ namespace CameraXExtensions
 
     public static class BuildersKtx
     {
-        static System.IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
-        static System.IntPtr id_launch;
-        public static Object Launch(this ICoroutineScope scope, IFunction2 block)
+        public class Function2 : Object, IFunction2
         {
-            ICoroutineContext context = EmptyCoroutineContext.Instance;
-            CoroutineStart start = CoroutineStart.Default;
+            Action action;
+            public Function2(Action action) => this.action = action;
+            public Object Invoke(Object p0, Object p1)
+            {
+                action();
+                return null;
+            }
+        }
 
-            if (id_launch == System.IntPtr.Zero)
+        static IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
+        static IntPtr id_launch;
+        public static Object Launch(this ICoroutineScope scope, Action action)
+        {
+            var context = EmptyCoroutineContext.Instance;
+            var start = CoroutineStart.Default;
+            var block = new Function2(action);
+
+            if (id_launch == IntPtr.Zero)
                 id_launch = JNIEnv.GetStaticMethodID(class_ref,
                     "launch", "(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;");
 
-            System.IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
+            IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
                 new JValue(scope), new JValue(context), new JValue(start), new JValue(block));
             return Object.GetObject<Object>(obj, JniHandleOwnership.TransferLocalRef);
         }

@@ -3,6 +3,7 @@ using Android.Views;
 using Android.Widget;
 using AndroidX.Annotations;
 using AndroidX.AppCompat.App;
+using Java.Lang;
 
 namespace CameraXBasic.Utils
 {
@@ -59,7 +60,7 @@ namespace CameraXBasic.Utils
             dialog.Window.ClearFlags(WindowManagerFlags.NotFocusable);
         }
 
-        private class OnApplyWindowInsetsListener : Java.Lang.Object, View.IOnApplyWindowInsetsListener
+        private class OnApplyWindowInsetsListener : Object, View.IOnApplyWindowInsetsListener
         {
             public WindowInsets OnApplyWindowInsets(View view, WindowInsets insets)
             {

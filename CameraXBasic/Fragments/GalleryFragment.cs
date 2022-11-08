@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Android.Content;
 using Android.Media;
+using Android.Net;
 using Android.OS;
 using Android.Views;
 using Android.Webkit;
@@ -15,6 +16,9 @@ using AndroidX.Fragment.App;
 using AndroidX.Navigation;
 using AndroidX.ViewPager.Widget;
 using CameraXBasic.Utils;
+using File = Java.IO.File;
+using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 namespace CameraXBasic.Fragments
 {
@@ -24,7 +28,7 @@ namespace CameraXBasic.Fragments
     {
         public static readonly HashSet<string> ExtensionWhitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg" };
 
-        private List<Java.IO.File> mediaList;
+        private List<File> mediaList;
 
         // Adapter class used to present a fragment containing one photo or video as a page
         private class MediaPagerAdapter : FragmentStatePagerAdapter
@@ -39,7 +43,7 @@ namespace CameraXBasic.Fragments
 
             public override int Count => parent.mediaList.Count;
             public override Fragment GetItem(int position) => PhotoFragment.Create(parent.mediaList[position]);
-            public override int GetItemPosition(Java.Lang.Object _) => PositionNone;
+            public override int GetItemPosition(Object _) => PositionNone;
         }
 
         public override void OnCreate(Bundle savedInstanceState)
@@ -50,7 +54,7 @@ namespace CameraXBasic.Fragments
             RetainInstance = true;
 
             // Get root directory of media from navigation arguments
-            var rootDirectory = new Java.IO.File(Arguments?.GetString("root_directory"));
+            var rootDirectory = new File(Arguments?.GetString("root_directory"));
 
             // Walk through all files in the root directory
             // We reverse the order of the list to present the last photos first
@@ -96,13 +100,13 @@ namespace CameraXBasic.Fragments
             // Handle share button press
             view.FindViewById<ImageButton>(Resource.Id.share_button).Click += (sender, e) =>
             {
-                Java.IO.File mediaFile = mediaList[mediaViewPager.CurrentItem];
+                File mediaFile = mediaList[mediaViewPager.CurrentItem];
                 // Create a sharing intent
                 var intent = new Intent();
                 // Infer media type from file extension
                 string mediaType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(MimeTypeMap.GetFileExtensionFromUrl(mediaFile.Path));
                 // Get URI from our FileProvider implementation
-                Android.Net.Uri uri = FileProvider.GetUriForFile(view.Context, Context.PackageName + ".provider", mediaFile);
+                Uri uri = FileProvider.GetUriForFile(view.Context, Context.PackageName + ".provider", mediaFile);
                 // Set the appropriate intent extra, type, action and flags
                 intent.PutExtra(Intent.ExtraStream, uri);
                 intent.SetType(mediaType);
@@ -116,7 +120,7 @@ namespace CameraXBasic.Fragments
             // Handle delete button press
             view.FindViewById<ImageButton>(Resource.Id.delete_button).Click += (sender, e) =>
             {
-                Java.IO.File mediaFile = mediaList[mediaViewPager.CurrentItem];
+                File mediaFile = mediaList[mediaViewPager.CurrentItem];
                 new AlertDialog.Builder(view.Context, Android.Resource.Style.ThemeMaterialDialog)
                 .SetTitle(GetString(Resource.String.delete_title))
                 .SetMessage(GetString(Resource.String.delete_dialog))

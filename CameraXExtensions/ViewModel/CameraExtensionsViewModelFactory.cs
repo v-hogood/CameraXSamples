@@ -1,6 +1,4 @@
 using Android.App;
-using AndroidX.Lifecycle;
-using AndroidX.Lifecycle.ViewModels;
 using Java.Lang;
 using static AndroidX.Lifecycle.ViewModelProvider;
 

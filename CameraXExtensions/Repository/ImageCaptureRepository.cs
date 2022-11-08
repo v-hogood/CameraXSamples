@@ -5,11 +5,11 @@ using Android.Media;
 using Android.Net;
 using Android.Webkit;
 using AndroidX.Core.Content;
-using AndroidX.Core.Net;
 using Java.IO;
 using Java.Lang;
 using Java.Util;
-using Kotlin.IO;
+using static AndroidX.Core.Net.UriKt;
+using static Kotlin.IO.FilesKt;
 
 namespace CameraXExtensions
 {
@@ -44,7 +44,7 @@ namespace CameraXExtensions
 
         public void NotifyImageCreated(Context context, Uri savedUri)
         {
-            var file = UriKt.ToFile(savedUri);
+            var file = ToFile(savedUri);
             var fileProviderUri =
                 FileProvider.GetUriForFile(context, context.PackageName + ".provider", file);
             context.SendBroadcast(new
@@ -53,7 +53,7 @@ namespace CameraXExtensions
 
             // Notify other apps so they can access the captured image
             var mimeType = MimeTypeMap.Singleton
-                .GetMimeTypeFromExtension(FilesKt.GetExtension(file));
+                .GetMimeTypeFromExtension(GetExtension(file));
 
             MediaScannerConnection.ScanFile(
                 context,

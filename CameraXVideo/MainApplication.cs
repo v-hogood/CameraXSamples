@@ -18,7 +18,7 @@ namespace CameraXVideo
 
         CameraXConfig CameraXConfig.IProvider.CameraXConfig
         {
-            get => AndroidX.Camera.Core.CameraXConfig.Builder.FromConfig(Camera2Config.DefaultConfig())
+            get => CameraXConfig.Builder.FromConfig(Camera2Config.DefaultConfig())
                 .SetMinimumLoggingLevel((int)LogPriority.Error).Build();
         }
     }

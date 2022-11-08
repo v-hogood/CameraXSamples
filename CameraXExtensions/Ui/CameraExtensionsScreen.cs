@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Android.Animation;
@@ -10,15 +9,14 @@ using Android.Widget;
 using AndroidX.Camera.View;
 using AndroidX.Core.View;
 using AndroidX.DynamicAnimation;
-using AndroidX.Lifecycle;
 using AndroidX.RecyclerView.Widget;
 using Java.Lang;
 using Kotlin.Coroutines;
-using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
 using static AndroidX.Core.View.ViewKt;
+using static AndroidX.Lifecycle.LifecycleOwnerKt;
 using static AndroidX.Lifecycle.ViewKt;
-using static CameraXExtensions.MainActivity;
+using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
 
 namespace CameraXExtensions
 {
@@ -55,20 +53,19 @@ namespace CameraXExtensions
 
         public PreviewView PreviewView;
 
-        private IMutableStateFlow action = StateFlowKt.MutableStateFlow(new CameraUiAction());
+        private IMutableStateFlow action = MutableStateFlow(new CameraUiAction());
         public IFlow Action;
 
-        public ICoroutineContext Context => LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).CoroutineContext;
+        public ICoroutineContext Context => GetLifecycleScope(FindViewTreeLifecycleOwner(root)).CoroutineContext;
 
-        public void ResumeWith(Java.Lang.Object result) { }
+        public void ResumeWith(Object result) { }
 
         public void OnClick(View v)
         {
             if (v.Id == Resource.Id.cameraShutter)
             {
-                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
-                    new Function2(() =>
-                        action.Emit(new CameraUiAction.ShutterButtonClick(), this)));
+                GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(() =>
+                    action.Emit(new CameraUiAction.ShutterButtonClick(), this));
             }
             else if (v.Id == Resource.Id.switchLens)
             {
@@ -76,15 +73,13 @@ namespace CameraXExtensions
             }
             else if (v.Id == Resource.Id.closePhotoPreview)
             {
-                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
-                    new Function2(() =>
-                        action.Emit(new CameraUiAction.ClosePhotoPreviewClick(), this)));
+                GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(() =>
+                    action.Emit(new CameraUiAction.ClosePhotoPreviewClick(), this));
             }
             else if (v.Id == Resource.Id.permissionsRequestButton)
             {
-                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
-                    new Function2(() =>
-                        action.Emit(new CameraUiAction.RequestPermissionClick(), this)));
+                GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(() =>
+                    action.Emit(new CameraUiAction.RequestPermissionClick(), this));
             }
         }
 
@@ -122,9 +117,8 @@ namespace CameraXExtensions
             if (oldPosition == newPosition) return;
             SelectItem(newPosition);
             var it = extensionsAdapter.CurrentList[newPosition] as CameraExtensionItem;
-            LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
-                new Function2(() => action.Emit(new CameraUiAction.SelectCameraExtension
-                    { Extension = it.ExtensionMode }, this)));
+            GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(() => action.Emit(new CameraUiAction.SelectCameraExtension
+                { Extension = it.ExtensionMode }, this));
         }
 
         private void SelectItem(int position)
@@ -193,9 +187,8 @@ namespace CameraXExtensions
             {
                 var meteringPointFactory = parent.PreviewView.MeteringPointFactory;
                 var focusPoint = meteringPointFactory.CreatePoint(e.GetX(), e.GetY());
-                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(parent.root)).Launch(
-                    new Function2(() =>
-                        parent.action.Emit(new CameraUiAction.Focus { meteringPoint = focusPoint }, parent)));
+                GetLifecycleScope(FindViewTreeLifecycleOwner(parent.root)).Launch(() =>
+                    parent.action.Emit(new CameraUiAction.Focus { meteringPoint = focusPoint }, parent));
                 parent.ShowFocusPoint(e.GetX(), e.GetY());
                 return true;
             }
@@ -214,9 +207,8 @@ namespace CameraXExtensions
 
             public override bool OnScale(ScaleGestureDetector detector)
             {
-                LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(parent.root)).Launch(
-                    new Function2(() =>
-                        parent.action.Emit(new CameraUiAction.Scale { scaleFactor = detector.ScaleFactor }, parent)));
+                GetLifecycleScope(FindViewTreeLifecycleOwner(parent.root)).Launch(() =>
+                    parent.action.Emit(new CameraUiAction.Scale { scaleFactor = detector.ScaleFactor }, parent));
                 return true;
             }
         }
@@ -310,9 +302,8 @@ namespace CameraXExtensions
 
         public void SwitchLens()
         {
-            LifecycleOwnerKt.GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(
-                new Function2(() =>
-                    action.Emit(new CameraUiAction.SwitchCameraClick(), this)));
+            GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(() =>
+                action.Emit(new CameraUiAction.SwitchCameraClick(), this));
             switchLensButton.Animate().Rotation(180f);
             switchLensButton.Animate().SetDuration(300L);
             switchLensButton.Animate().SetListener(this);
