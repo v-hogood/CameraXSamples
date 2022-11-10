@@ -76,7 +76,7 @@ namespace CameraXTfLite
             ByteBuffer tfliteModel = FileUtil.LoadMappedFile(this, ModelPath);
             nnApiDelegate = new NnApiDelegate();
             tflite = new Interpreter(tfliteModel,
-                new Interpreter.Options().AddDelegate(nnApiDelegate));
+                new Interpreter.Options(new InterpreterApiOptions().AddDelegate(nnApiDelegate)));
 
             MetadataExtractor metadataExtractor = new MetadataExtractor(tfliteModel);
             Stream labelFile = metadataExtractor.GetAssociatedFile("labelmap.txt");
