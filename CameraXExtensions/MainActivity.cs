@@ -48,6 +48,9 @@ namespace CameraXExtensions
             [ExtensionMode.None] = Resource.String.camera_mode_none,
         };
 
+        // tracks the current view state
+        private IMutableStateFlow captureScreenViewState = MutableStateFlow(new CaptureScreenViewState());
+
         // handles back press if the current screen is the photo post capture screen
         class PostCaptureBackPressedCallback : OnBackPressedCallback
         {
@@ -106,6 +109,10 @@ namespace CameraXExtensions
             cameraExtensionsScreen = new CameraExtensionsScreen(FindViewById(Resource.Id.root));
 
             postCaptureBackPressedCallback = new PostCaptureBackPressedCallback(this);
+
+            // consume and dispatch the current view state to update the camera extensions screen
+            GetLifecycleScope(this).Launch(() => CollectLatest(captureScreenViewState, this, this));
+
             OnBackPressedDispatcher.AddCallback(this, postCaptureBackPressedCallback);
 
             // initialize the permission state flow with the current camera permission status
@@ -187,28 +194,54 @@ namespace CameraXExtensions
                 var state = p0 as CaptureState;
                 if (state is CaptureState.CaptureNotReady)
                 {
-                    postCaptureBackPressedCallback.Enabled = false;
-                    cameraExtensionsScreen.HidePhoto();
-                    cameraExtensionsScreen.EnableCameraShutter(true);
-                    cameraExtensionsScreen.EnableSwitchLens(true);
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdatePostCaptureScreen(() =>
+                            new PostCaptureScreenViewState.HiddenViewState())
+                        .UpdateCameraScreen((it) =>
+                            it.EnableCameraShutter(true)
+                                .EnableSwitchLens(true)
+                        ), this);
                 }
                 else if (state is CaptureState.CaptureReady)
                 {
-                    cameraExtensionsScreen.EnableCameraShutter(true);
-                    cameraExtensionsScreen.EnableSwitchLens(true);
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((it) =>
+                            it.EnableCameraShutter(true)
+                                .EnableSwitchLens(true)
+                        ), this);
                 }
                 else if (state is CaptureState.CaptureStarted)
                 {
-                    cameraExtensionsScreen.EnableCameraShutter(false);
-                    cameraExtensionsScreen.EnableSwitchLens(false);
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((it) =>
+                            it.EnableCameraShutter(false)
+                                .EnableSwitchLens(false)
+                        ), this);
                 }
                 else if (state is CaptureState.CaptureFinished)
                 {
-                    var uri = (state as CaptureState.CaptureFinished).OutputResults.SavedUri;
                     cameraExtensionsViewModel.StopPreview();
-                    cameraExtensionsScreen.ShowPhoto(((CaptureState.CaptureFinished)state).OutputResults.SavedUri);
-                    cameraExtensionsScreen.HideCameraControls();
-                    postCaptureBackPressedCallback.Enabled = (uri != null);
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdatePostCaptureScreen(() =>
+                        {
+                            var uri = (state as CaptureState.CaptureFinished).OutputResults.SavedUri;
+                            if (uri != null)
+                            {
+                                return new PostCaptureScreenViewState.VisibleViewState()
+                                { uri = uri };
+                            }
+                            else
+                            {
+                                return new PostCaptureScreenViewState.HiddenViewState();
+                            }
+                        })
+                        .UpdateCameraScreen((it) =>
+                            it.HideCameraControls()
+                        ), this);          
                 }
                 else if (state is CaptureState.CaptureFailed)
                 {
@@ -216,8 +249,13 @@ namespace CameraXExtensions
                     cameraExtensionsViewModel.StartPreview(
                         this, cameraExtensionsScreen.PreviewView
                     );
-                    cameraExtensionsScreen.EnableCameraShutter(true);
-                    cameraExtensionsScreen.EnableSwitchLens(true);
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((it) =>
+                            it.ShowCameraControls()
+                                .EnableCameraShutter(true)
+                                .EnableSwitchLens(true)
+                        ), this);
                 }
             }
             else if (p0 is Kotlin.Pair)
@@ -240,11 +278,15 @@ namespace CameraXExtensions
 
                 if (cameraUiState.CameraState == CameraState.NotReady)
                 {
-                    postCaptureBackPressedCallback.Enabled = false;
-                    cameraExtensionsScreen.HidePhoto();
-                    cameraExtensionsScreen.ShowCameraControls();
-                    cameraExtensionsScreen.EnableCameraShutter(false);
-                    cameraExtensionsScreen.EnableSwitchLens(false);
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdatePostCaptureScreen(() =>
+                            new PostCaptureScreenViewState.HiddenViewState())
+                        .UpdateCameraScreen((it) =>
+                            it.ShowCameraControls()
+                                .EnableCameraShutter(false)
+                                .EnableSwitchLens(false)
+                        ), this);
                     cameraExtensionsViewModel.InitializeCamera(this);
                 }
                 else if (cameraUiState.CameraState == CameraState.Ready)
@@ -256,20 +298,31 @@ namespace CameraXExtensions
                             cameraExtensionsScreen.PreviewView
                         );
                     });
-                    cameraExtensionsScreen.SetAvailableExtensions(cameraUiState.AvailableExtensions.Select((it) =>
-                    {
-                        return new CameraExtensionItem()
-                        {
-                            ExtensionMode = it,
-                            Name = GetString(extensionName[it]),
-                            Selected = cameraUiState.ExtensionMode == it
-                        };
-                    }).ToList());
-                    cameraExtensionsScreen.ShowCameraControls();
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((s) =>
+                            s.ShowCameraControls()
+                            .SetAvailableExtensions(cameraUiState.AvailableExtensions.Select((it) =>
+                            {
+                                return new CameraExtensionItem()
+                                {
+                                    ExtensionMode = it,
+                                    Name = GetString(extensionName[it]),
+                                    Selected = cameraUiState.ExtensionMode == it
+                                };
+                            }).ToList())
+                        ), this);
                 }
                 else if (cameraUiState.CameraState == CameraState.PreviewStopped)
                 {
                 }
+            }
+            else if (p0 is CaptureScreenViewState)
+            {
+                var state = p0 as CaptureScreenViewState;
+                cameraExtensionsScreen.SetCaptureScreenViewState(state);
+                postCaptureBackPressedCallback.Enabled =
+                    state.postCaptureScreenViewState is PostCaptureScreenViewState.VisibleViewState;
             }
             return null;
         }
@@ -281,9 +334,14 @@ namespace CameraXExtensions
 
         private void ClosePhotoPreview()
         {
-            postCaptureBackPressedCallback.Enabled = false;
-            cameraExtensionsScreen.HidePhoto();
-            cameraExtensionsScreen.ShowCameraControls();
+            captureScreenViewState.Emit(
+                (captureScreenViewState.Value as CaptureScreenViewState)
+                .UpdateCameraScreen((state) =>
+                    state.ShowCameraControls())
+                .UpdatePostCaptureScreen(() =>
+                    new PostCaptureScreenViewState.HiddenViewState()),
+                this
+            );
             cameraExtensionsViewModel.StartPreview(
                 this, cameraExtensionsScreen.PreviewView
             );

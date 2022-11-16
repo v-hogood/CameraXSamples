@@ -52,6 +52,7 @@
     <AndroidUseSharedRuntime>False</AndroidUseSharedRuntime>
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -76,6 +77,9 @@
     <Compile Include="Ui\ViewKtx.cs" />
     <Compile Include="ViewModel\CameraExtensionsViewModel.cs" />
     <Compile Include="ViewModel\CameraExtensionsViewModelFactory.cs" />
+    <Compile Include="ViewState\CameraPreviewScreenViewState.cs" />
+    <Compile Include="ViewState\CaptureScreenViewState.cs" />
+    <Compile Include="ViewState\PostCaptureScreenViewState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

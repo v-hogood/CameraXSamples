@@ -223,47 +223,13 @@ namespace CameraXExtensions
             return didConsume;
         }
 
-        public void SetAvailableExtensions(List<CameraExtensionItem> extensions)
+        public void SetCaptureScreenViewState(CaptureScreenViewState state)
         {
-            extensionsAdapter.SubmitList(extensions);
-        }
-
-        public void ShowPhoto(Uri uri)
-        {
-            if (uri == null) return;
-            SetVisible(photoPreview, true);
-            // photoPreview.Load(uri);
-            SetVisible(closePhotoPreview, true);
-        }
-
-        public void HidePhoto()
-        {
-            SetVisible(photoPreview, false);
-            SetVisible(closePhotoPreview, false);
-        }
-
-        public void ShowCameraControls()
-        {
-            SetVisible(cameraShutterButton, true);
-            SetVisible(switchLensButton, true);
-            SetVisible(extensionSelector, true);
-        }
-
-        public void HideCameraControls()
-        {
-            SetVisible(cameraShutterButton, false);
-            SetVisible(switchLensButton, false);
-            SetVisible(extensionSelector, false);
-        }
-
-        public void EnableCameraShutter(bool isEnabled)
-        {
-            cameraShutterButton.Enabled = isEnabled;
-        }
-
-        public void EnableSwitchLens(bool isEnabled)
-        {
-            switchLensButton.Enabled = isEnabled;
+            SetCameraScreenViewState(state.cameraPreviewScreenViewState);
+            if (state.postCaptureScreenViewState is PostCaptureScreenViewState.HiddenViewState)
+                HidePhoto();
+            else if (state.postCaptureScreenViewState is PostCaptureScreenViewState.VisibleViewState)
+                ShowPhoto(((PostCaptureScreenViewState.VisibleViewState)state.postCaptureScreenViewState).uri);
         }
 
         public void ShowCaptureError(string errorMessage)
@@ -288,6 +254,32 @@ namespace CameraXExtensions
             {
                 permissionsRationale.Text = context.GetString(Resource.String.camera_permissions_request);
             }
+        }
+
+        public void ShowPhoto(Uri uri)
+        {
+            if (uri == null) return;
+            SetVisible(photoPreview, true);
+            // photoPreview.Load(uri);
+            SetVisible(closePhotoPreview, true);
+        }
+
+        public void HidePhoto()
+        {
+            SetVisible(photoPreview, false);
+            SetVisible(closePhotoPreview, false);
+        }
+
+        private void SetCameraScreenViewState(CameraPreviewScreenViewState state)
+        {
+            cameraShutterButton.Enabled = state.shutterButtonViewState.isEnabled;
+            SetVisible(cameraShutterButton, state.shutterButtonViewState.isVisible);
+
+            switchLensButton.Enabled = state.switchLensButtonViewState.isEnabled;
+            SetVisible(switchLensButton, state.switchLensButtonViewState.isVisible);
+
+            SetVisible(extensionSelector, state.extensionsSelectorViewState.isVisible);
+            extensionsAdapter.SubmitList(state.extensionsSelectorViewState.extensions);
         }
 
         void OnItemClick(View view)

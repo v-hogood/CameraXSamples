@@ -16,8 +16,8 @@ namespace CameraXExtensions
         public CameraUiState(CameraUiState cameraUiState)
         {
             CameraState = cameraUiState.CameraState;
-            AvailableExtensions = new List<int>(cameraUiState.AvailableExtensions);
-            AvailableCameraLens = new List<int>(cameraUiState.AvailableCameraLens);
+            AvailableExtensions = cameraUiState.AvailableExtensions;
+            AvailableCameraLens = cameraUiState.AvailableCameraLens;
             CameraLens = cameraUiState.CameraLens;
             ExtensionMode = cameraUiState.ExtensionMode;
         }
