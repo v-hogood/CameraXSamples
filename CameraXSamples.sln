@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraXVideo", "CameraXVide
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraXExtensions", "CameraXExtensions\CameraXExtensions.csproj", "{884ED11A-DBB7-471B-B997-654F9BEFD09E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraXMlKit", "CameraXMlKit\CameraXMlKit.csproj", "{174E1CC5-2AE9-40F6-9361-6030FB794BE7}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraUtils", "CameraUtils\CameraUtils.csproj", "{320822AF-9F5C-484C-A07D-9F2C3E9D7034}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HdrViewfinder", "HdrViewfinderX\HdrViewfinder.csproj", "{376C6CB5-45C9-4230-B782-143754E5CC0C}"
@@ -47,6 +49,10 @@ Global
 		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{376C6CB5-45C9-4230-B782-143754E5CC0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{174E1CC5-2AE9-40F6-9361-6030FB794BE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{174E1CC5-2AE9-40F6-9361-6030FB794BE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{174E1CC5-2AE9-40F6-9361-6030FB794BE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{174E1CC5-2AE9-40F6-9361-6030FB794BE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
