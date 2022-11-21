@@ -67,7 +67,6 @@ namespace CameraXTfLite
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.activity_camera);
             container = FindViewById(Resource.Id.camera_container) as ConstraintLayout;
 
@@ -328,7 +327,6 @@ namespace CameraXTfLite
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
         {
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
             if (requestCode == permissionsRequestCode && HasPermissions(this))
             {
                 BindCameraUseCases();

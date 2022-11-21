@@ -27,7 +27,6 @@ namespace CameraXBasic
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
 
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.activity_main);
@@ -72,12 +71,6 @@ namespace CameraXBasic
             {
                 base.OnBackPressed();
             }
-        }
-
-        public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
-        {
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-            base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
 
         // Use external media if it is available, our app's file directory otherwise

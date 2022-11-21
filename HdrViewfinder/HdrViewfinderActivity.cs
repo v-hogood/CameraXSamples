@@ -113,7 +113,6 @@ namespace HdrViewfinder
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             SetContentView(Resource.Layout.main);
 
             mViewListener = new ViewListener(this);
@@ -329,7 +328,6 @@ namespace HdrViewfinder
             Permission[] grantResults)
         {
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-            Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             Log.Info(Tag, "OnRequestPermissionResult");
             if (requestCode == RequestPermissionsRequestCode)

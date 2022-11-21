@@ -53,14 +53,6 @@
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Core" />
-    <Reference Include="Mono.Android" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -98,12 +90,8 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.webp" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.1.0.2" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.1.0.1" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.MlKit.Vision" Version="1.2.0" />
     <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0.1" />
     <PackageReference Include="Xamarin.AndroidX.ConstraintLayout" Version="2.1.4.2" />
-    <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.1" />
     <PackageReference Include="Xamarin.Google.MlKit.BarcodeScanning" Version="117.0.2.2" />
   </ItemGroup>
