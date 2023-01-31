@@ -15,7 +15,7 @@
  limitations under the License.
 -->
 <manifest
-    package="com.example.android.hdrviewfinder"
+    package="com.android.example.hdrviewfinder"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="1"
     android:versionName="1.0">
@@ -36,7 +36,7 @@
 
         <activity
             android:exported="true"
-            android:name="com.example.android.hdrviewfinder.HdrViewfinderActivity"
+            android:name="com.android.example.hdrviewfinder.HdrViewfinderActivity"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
                 android:theme="@style/Theme.AppCompat.Light">

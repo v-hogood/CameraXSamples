@@ -115,9 +115,9 @@
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0.1" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0.1" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.2.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.2.0.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.2" />
     <PackageReference Include="TensorFlow.Lite.Support" Version="0.4.3" />
     <PackageReference Include="TensorFlow.Lite.Metadata" Version="0.4.3" />
   </ItemGroup>

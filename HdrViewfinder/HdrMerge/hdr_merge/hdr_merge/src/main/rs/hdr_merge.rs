@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #pragma version(1)
-#pragma rs java_package_name(com.example.android.hdrviewfinder)
+#pragma rs java_package_name(com.android.example.hdrviewfinder)
 #pragma rs_fp_relaxed
 
 rs_allocation gCurrentFrame;

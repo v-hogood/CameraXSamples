@@ -57,9 +57,9 @@
     <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.1.0-beta02" />
     <PackageReference Include="Xamarin.AndroidX.Camera.Video" Version="1.1.0-beta02" />
     <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.1.0-beta02" />
-    <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.3" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.1" />
-    <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.6.4.1" />
+    <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.3.1" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.2" />
+    <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.6.4.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\VideoQualityExt.cs" />

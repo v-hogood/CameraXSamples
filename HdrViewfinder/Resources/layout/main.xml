@@ -22,9 +22,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    tools:context="com.example.android.hdrviewfinder.HdrViewfinderActivity">
+    tools:context="com.android.example.hdrviewfinder.HdrViewfinderActivity">
 
-    <com.example.android.hdrviewfinder.FixedAspectSurfaceView
+    <com.android.example.hdrviewfinder.FixedAspectSurfaceView
         android:id="@+id/preview"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

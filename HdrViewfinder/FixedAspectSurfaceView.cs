@@ -16,7 +16,7 @@ namespace HdrViewfinder
     // adjustable by the view; for example, by setting the layout parameters to be WRAP_CONTENT for
     // the dimension that is best adjusted to maintain the aspect ratio.</p>
     //
-    [Register("com.example.android.hdrviewfinder.FixedAspectSurfaceView")]
+    [Register("com.android.example.hdrviewfinder.FixedAspectSurfaceView")]
     public class FixedAspectSurfaceView : SurfaceView
     {
         //

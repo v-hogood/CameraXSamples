@@ -57,7 +57,7 @@ namespace HdrViewfinder
     // Android {@link android.view.Surface} class, which allows for zero-copy transport of large
     // buffers between processes and subsystems.</p>
 
-    [Activity(Name = "com.example.android.hdrviewfinder.HdrViewfinderActivity", Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
+    [Activity(Name = "com.android.example.hdrviewfinder.HdrViewfinderActivity", Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class HdrViewfinderActivity : AppCompatActivity,
         View.IOnClickListener, View.IOnTouchListener, TextureView.ISurfaceTextureListener, Preview.ISurfaceProvider, IConsumer
     {
