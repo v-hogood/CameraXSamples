@@ -1,9 +1,10 @@
+using Android.Net;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
 using AndroidX.Fragment.App;
 using Bumptech.Glide;
-using Java.IO;
+using CameraXBasic.Utils;
 
 namespace CameraXBasic.Fragments
 {
@@ -19,23 +20,23 @@ namespace CameraXBasic.Fragments
         public override void OnViewCreated(View view, Bundle savedInstanceState)
         {
             base.OnViewCreated(view, savedInstanceState);
-            string filename = Arguments?.GetString(FileNameKey);
-            if (string.IsNullOrEmpty(filename))
+            var uri = Arguments?.GetString(UriKey);
+            if (string.IsNullOrEmpty(uri))
             {
                 Glide.With(view).Load(Resource.Drawable.ic_photo).Into(view as ImageView);
             }
             else
             {
-                Glide.With(view).Load(new File(filename)).Into(view as ImageView);
+                Glide.With(view).Load(Uri.Parse(uri)).Into(view as ImageView);
             }
         }
 
-        private const string FileNameKey = "file_name";
+        private const string UriKey = "uri";
 
-        public static PhotoFragment Create(File image)
+        public static PhotoFragment Create(MediaStoreFile mediaStoreFile)
         {
             var bundle = new Bundle();
-            bundle.PutString(FileNameKey, image.AbsolutePath);
+            bundle.PutString(UriKey, mediaStoreFile.Uri.ToString());
             return new PhotoFragment { Arguments = bundle };
         }
     }

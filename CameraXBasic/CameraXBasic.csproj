@@ -57,6 +57,7 @@
     <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.2.0.1" />
     <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.3.1" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.7.0.2" />
+    <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.6.4.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Fragments\CameraFragment.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="Fragments\GalleryFragment.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Fragments\PhotoFragment.cs" />
+    <Compile Include="Utils\MediaStoreUtils.cs" />
     <Compile Include="Utils\ViewExtensions.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -128,7 +130,6 @@
     <AndroidResource Include="Resources\drawable\ic_shutter_pressed.xml" />
     <AndroidResource Include="Resources\drawable\ic_switch.xml" />
     <AndroidResource Include="Resources\navigation\nav_graph.xml" />
-    <AndroidResource Include="Resources\xml\file_paths.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

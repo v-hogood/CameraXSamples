@@ -1,17 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Android.Content;
 using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.Hardware.Display;
-using Android.Media;
-using Android.Net;
 using Android.OS;
+using Android.Provider;
+using Android.Runtime;
 using Android.Util;
 using Android.Views;
-using Android.Webkit;
 using Android.Widget;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Lifecycle;
@@ -25,16 +24,21 @@ using AndroidX.Window.Layout;
 using Bumptech.Glide;
 using Bumptech.Glide.Request;
 using CameraXBasic.Utils;
-using Java.IO;
 using Java.Lang;
 using Java.Nio;
 using Java.Text;
 using Java.Util;
 using Java.Util.Concurrent;
-using File = Java.IO.File;
+using Kotlin.Coroutines;
+using Kotlin.Jvm.Functions;
+using Xamarin.KotlinX.Coroutines;
+using static AndroidX.Lifecycle.LifecycleOwnerKt;
+using Exception = Java.Lang.Exception;
 using IObserver = AndroidX.Lifecycle.IObserver;
+using Math = Java.Lang.Math;
 using Navigation = AndroidX.Navigation.Navigation;
-using Path = System.IO.Path;
+using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 // Helper type alias used for analysis use case callbacks
 delegate void LumaListener(double luma);
@@ -50,14 +54,16 @@ namespace CameraXBasic.Fragments
         IObserver,
         DisplayManager.IDisplayListener,
         View.IOnClickListener,
-        MediaScannerConnection.IOnScanCompletedListener,
-        ImageCapture.IOnImageSavedCallback,
-        IFileFilter
+        ImageCapture.IOnImageSavedCallback
     {
         private ConstraintLayout container;
         private PreviewView viewFinder;
-        private File outputDirectory;
+
+#pragma warning disable 0618
         private LocalBroadcastManager broadcastManager;
+#pragma warning restore 0618
+
+        private MediaStoreUtils mediaStoreUtils;
 
         private int displayId = -1;
         private int lensFacing = CameraSelector.LensFacingBack;
@@ -99,9 +105,7 @@ namespace CameraXBasic.Fragments
         // We need a display listener for orientation changes that do not trigger a configuration
         // change, for example if we choose to override config change in manifest or for 180-degree
         // orientation changes.
-        public void OnDisplayAdded(int id)
-        {
-        }
+        public void OnDisplayAdded(int id) { }
 
         public void OnDisplayChanged(int id)
         {
@@ -113,9 +117,7 @@ namespace CameraXBasic.Fragments
             }
         }
 
-        public void OnDisplayRemoved(int id)
-        {
-        }
+        public void OnDisplayRemoved(int id) { }
 
         public override void OnResume()
         {
@@ -178,7 +180,9 @@ namespace CameraXBasic.Fragments
 
             volumeDownReceiver = new VolumeDownReceiver(this);
 
+#pragma warning disable 0618
             broadcastManager = LocalBroadcastManager.GetInstance(view.Context);
+#pragma warning restore 0618
 
             // Set up the intent filter that will receive events from our main activity
             var filter = new IntentFilter();
@@ -191,8 +195,8 @@ namespace CameraXBasic.Fragments
             // Initialize WindowManager to retrieve display metrics
             windowMetricsCalculator = WindowMetricsCalculator.Companion.OrCreate;
 
-            // Determine the output directory
-            outputDirectory = MainActivity.GetOutputDirectory(RequireContext());
+            // Initialize MediaStoreUtils for fetching this app's images
+            mediaStoreUtils = new MediaStoreUtils(RequireContext());
 
             // Wait for the views to be properly laid out
             viewFinder.Post(() =>
@@ -204,7 +208,7 @@ namespace CameraXBasic.Fragments
                 UpdateCameraUi();
 
                 // Set up the camera and its use cases
-                SetUpCamera();
+                GetLifecycleScope(this).Launch(() => SetUpCamera());
             });
         }
 
@@ -462,11 +466,6 @@ namespace CameraXBasic.Fragments
             return AndroidX.Camera.Core.AspectRatio.Ratio169;
         }
 
-        public bool Accept(File file)
-        {
-            return GalleryFragment.ExtensionWhitelist.Contains(Path.GetExtension(file.Path).ToLower());
-        }
-
         // Method used to re-draw the camera UI controls, called every time configuration changes.
         private void UpdateCameraUi()
         {
@@ -477,10 +476,13 @@ namespace CameraXBasic.Fragments
             var controls = View.Inflate(RequireContext(), Resource.Layout.camera_ui_container, container);
 
             // In the background, load latest photo taken (if any) for gallery thumbnail
-            Task.Run(() =>
+            GetLifecycleScope(this).Launch(() =>
             {
-                File[] files = outputDirectory.ListFiles(this);
-                SetGalleryThumbnail(Uri.FromFile(files.Last()));
+                var mediaList = mediaStoreUtils.GetImages();
+                if (mediaList.Any())
+                {
+                    SetGalleryThumbnail(mediaList.First().Uri);
+                }
             });
 
             // Listener for button used to capture photo
@@ -499,8 +501,6 @@ namespace CameraXBasic.Fragments
             controls.FindViewById<ImageButton>(Resource.Id.photo_view_button).SetOnClickListener(this);
         }
 
-        private File photoFile;
-
         public void OnClick(View v)
         {
             if (v.Id == Resource.Id.camera_capture_button)
@@ -508,18 +508,25 @@ namespace CameraXBasic.Fragments
                 // Get a stable reference of the modifiable image capture use case
                 if (imageCapture != null)
                 {
-                    // Create output file to hold the image
-                    photoFile = CreateFile(outputDirectory, Filename, PhotoExtension);
-
-                    // Setup image capture metadata
-                    var metadata = new ImageCapture.Metadata();
-
-                    // Mirror image when using the front camera
-                    metadata.ReversedHorizontal = lensFacing == CameraSelector.LensFacingFront;
+                    // Create time stamped name and MediaStore entry.
+                    var name = new SimpleDateFormat(Filename, Locale.Us)
+                        .Format(JavaSystem.CurrentTimeMillis());
+                    var contentValues = new ContentValues();
+#pragma warning disable 0618
+                    contentValues.Put(MediaStore.MediaColumns.DisplayName, name);
+                    contentValues.Put(MediaStore.MediaColumns.MimeType, PhotoType);
+                    if (Build.VERSION.SdkInt > BuildVersionCodes.P)
+                    {
+                        var appName = RequireContext().Resources.GetString(Resource.String.app_name);
+                        contentValues.Put(MediaStore.MediaColumns.RelativePath, "Pictures/" + appName);
+                    }
+#pragma warning restore 0618
 
                     // Create output options object which contains file + metadata
-                    var outputOptions = new ImageCapture.OutputFileOptions.Builder(photoFile)
-                        .SetMetadata(metadata)
+                    var outputOptions = new ImageCapture.OutputFileOptions
+                        .Builder(RequireContext().ContentResolver,
+                            MediaStore.Images.Media.ExternalContentUri,
+                            contentValues)
                         .Build();
 
                     // Setup image capture listener which is triggered after photo has been taken
@@ -551,14 +558,14 @@ namespace CameraXBasic.Fragments
             else if (v.Id == Resource.Id.photo_view_button)
             {
                 // Only navigate when the gallery has photos
-                if (true == outputDirectory.ListFiles().Length > 0)
+                GetLifecycleScope(this).Launch(() =>
                 {
-                    var args = new Bundle();
-                    args.PutString("root_directory", outputDirectory.AbsolutePath);
-                    Navigation.FindNavController(
-                        RequireActivity(), Resource.Id.fragment_container
-                    ).Navigate(Resource.Id.action_camera_to_gallery, args);
-                }
+                    if (mediaStoreUtils.GetImages().Any())
+                    {
+                        Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container)
+                            .Navigate(Resource.Id.action_camera_to_gallery);
+                    }
+                });
             }
         }
 
@@ -569,8 +576,7 @@ namespace CameraXBasic.Fragments
 
         public void OnImageSaved(ImageCapture.OutputFileResults output)
         {
-            var savedUri = output.SavedUri != null ? output.SavedUri :
-                Uri.FromFile(photoFile);
+            var savedUri = output.SavedUri;
             Log.Debug(Tag, "Photo capture succeeded: " + savedUri);
 
             // We can only change the foreground Drawable using API level 23+ API
@@ -584,26 +590,12 @@ namespace CameraXBasic.Fragments
             // so if you only target API level 24+ you can remove this statement
             if (Build.VERSION.SdkInt < BuildVersionCodes.N)
             {
+                // Suppress deprecated Camera usage needed for API level 23 and below
+#pragma warning disable 0618
                 RequireActivity().SendBroadcast(new
                     Intent(Android.Hardware.Camera.ActionNewPicture, savedUri));
+#pragma warning restore 0618
             }
-
-            // If the folder selected is an external media directory, this is
-            // unnecessary but otherwise other apps will not be able to access our
-            // images unless we scan them using [MediaScannerConnection]
-            var mimeType = MimeTypeMap.Singleton
-                .GetMimeTypeFromExtension(Path.GetExtension(savedUri.Path));
-
-            MediaScannerConnection.ScanFile(
-                Context,
-                new string[] { savedUri.Path },
-                new string[] { mimeType },
-                this);
-        }
-
-        public void OnScanCompleted(string Path, Uri uri)
-        {
-            Log.Debug(Tag, "Image capture scanned into media store: " + uri);
         }
 
         // Enabled or disabled a button to switch cameras depending on the available cameras
@@ -653,12 +645,6 @@ namespace CameraXBasic.Fragments
                 : base()
             {
                 listeners = new LumaListener[] { listener };
-            }
-
-            // Used to add listeners that will be called with each luma computed
-            void OnFrameAnalyzed(LumaListener listener)
-            {
-                listeners.Append(listener);
             }
 
             // Helper extension function used to extract a byte array from an image plane buffer
@@ -742,15 +728,39 @@ namespace CameraXBasic.Fragments
 
         private new const string Tag = "CameraXBasic";
         private const string Filename = "yyyy-MM-dd-HH-mm-ss-SSS";
-        private const string PhotoExtension = ".jpg";
+        private const string PhotoType = "image/jpeg";
         private const double Ratio4To3Value = 4.0 / 3.0;
         private const double Ratio16To9Value = 16.0 / 9.0;
+    }
 
-        // Helper function used to create a timestamped file
-        private File CreateFile(File baseFolder, string format, string extension)
+    public static class BuildersKtx
+    {
+        public class Function2 : Object, IFunction2
         {
-            return new File(baseFolder, new SimpleDateFormat(format, Locale.Us)
-                .Format(JavaSystem.CurrentTimeMillis()) + extension);
+            Action action;
+            public Function2(Action action) => this.action = action;
+            public Object Invoke(Object p0, Object p1)
+            {
+                action();
+                return null;
+            }
+        }
+
+        static IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
+        static IntPtr id_launch;
+        public static Object Launch(this ICoroutineScope scope, Action action)
+        {
+            var context = EmptyCoroutineContext.Instance;
+            var start = CoroutineStart.Default;
+            var block = new Function2(action);
+
+            if (id_launch == IntPtr.Zero)
+                id_launch = JNIEnv.GetStaticMethodID(class_ref,
+                    "launch", "(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;");
+
+            IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
+                new JValue(scope), new JValue(context), new JValue(start), new JValue(block));
+            return Object.GetObject<Object>(obj, JniHandleOwnership.TransferLocalRef);
         }
     }
 }

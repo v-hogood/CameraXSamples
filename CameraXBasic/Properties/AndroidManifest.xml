@@ -29,6 +29,8 @@
     <!-- Declare permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
+
     <application
         android:name=".MainApplication"
         android:icon="@mipmap/ic_launcher"
@@ -41,13 +43,13 @@
             android:name="com.android.example.cameraxbasic.MainActivity"
             android:clearTaskOnLaunch="true"
             android:theme="@style/AppTheme"
-            android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:screenOrientation="fullUser"
             android:rotationAnimation="seamless"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
-            tools:targetApi="O">
+            tools:targetApi="O"
+            android:exported="true">
 
             <!-- Main app intent filter -->
             <intent-filter>
@@ -79,18 +81,6 @@
 
         </activity>
 
-        <!-- FileProvider used to share photos with other apps -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"/>
-        </provider>
-
     </application>
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
 </manifest>

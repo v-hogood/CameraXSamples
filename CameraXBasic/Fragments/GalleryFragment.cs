@@ -1,24 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Android.Content;
 using Android.Media;
-using Android.Net;
 using Android.OS;
 using Android.Views;
-using Android.Webkit;
 using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.ConstraintLayout.Widget;
-using AndroidX.Core.Content;
 using AndroidX.Fragment.App;
 using AndroidX.Navigation;
-using AndroidX.ViewPager.Widget;
+using AndroidX.ViewPager2.Adapter;
+using AndroidX.ViewPager2.Widget;
 using CameraXBasic.Utils;
-using File = Java.IO.File;
-using Object = Java.Lang.Object;
-using Uri = Android.Net.Uri;
+using static AndroidX.Lifecycle.LifecycleOwnerKt;
 
 namespace CameraXBasic.Fragments
 {
@@ -26,41 +20,44 @@ namespace CameraXBasic.Fragments
     [Android.App.Activity(Name = "com.android.example.cameraxbasic.fragments.GalleryFragment")]
     public class GalleryFragment : Fragment
     {
-        public static readonly HashSet<string> ExtensionWhitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg" };
-
-        private List<File> mediaList;
+        private List<MediaStoreFile> mediaList;
+        private bool hasMediaItems;
 
         // Adapter class used to present a fragment containing one photo or video as a page
-        private class MediaPagerAdapter : FragmentStatePagerAdapter
+        public class MediaPagerAdapter : FragmentStateAdapter
         {
-            private readonly GalleryFragment parent;
-
-            public MediaPagerAdapter(GalleryFragment f, FragmentManager fm)
-                : base(fm, BehaviorResumeOnlyCurrentFragment)
+            public MediaPagerAdapter(GalleryFragment f, FragmentManager fm,
+                List<MediaStoreFile> mediaList)
+                : base(fm, f.Lifecycle)
             {
-                parent = f;
+                this.mediaList = mediaList;
             }
+            private List<MediaStoreFile> mediaList;
 
-            public override int Count => parent.mediaList.Count;
-            public override Fragment GetItem(int position) => PhotoFragment.Create(parent.mediaList[position]);
-            public override int GetItemPosition(Object _) => PositionNone;
+            public override int ItemCount => mediaList.Count;
+            public override Fragment CreateFragment(int position) =>
+                PhotoFragment.Create(mediaList[position]);
+            public override long GetItemId(int position) =>
+                mediaList[position].Id;
+            public override bool ContainsItem(long itemId) =>
+                mediaList.Exists(it => it.Id == itemId);
+            public void SetMediaListAndNotify(List<MediaStoreFile> mediaList)
+            {
+                this.mediaList = mediaList;
+                NotifyDataSetChanged();
+            }
         }
 
         public override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
 
-            // Mark this as a retain fragment, so the lifecycle does not get restarted on config change
-            RetainInstance = true;
-
-            // Get root directory of media from navigation arguments
-            var rootDirectory = new File(Arguments?.GetString("root_directory"));
-
-            // Walk through all files in the root directory
-            // We reverse the order of the list to present the last photos first
-            mediaList = rootDirectory.ListFiles().Where(x =>
-                ExtensionWhitelist.Contains(Path.GetExtension(x.Name).ToLower())).
-                OrderByDescending(x => x.Name).ToList();
+            GetLifecycleScope(this).Launch(() =>
+            {
+                // Get images this app has access to from MediaStore
+                mediaList = new MediaStoreUtils(RequireContext()).GetImages();
+                hasMediaItems = mediaList.Any();
+            });
         }
 
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -72,17 +69,18 @@ namespace CameraXBasic.Fragments
         {
             base.OnViewCreated(view, savedInstanceState);
 
-            //Checking media files list
-            if (!mediaList.Any())
+            GetLifecycleScope(this).Launch(() =>
             {
-                view.FindViewById<ImageButton>(Resource.Id.delete_button).Enabled = false;
-                view.FindViewById<ImageButton>(Resource.Id.share_button).Enabled = false;
-            }
+                view.FindViewById<ImageButton>(Resource.Id.delete_button).Enabled = hasMediaItems;
+                view.FindViewById<ImageButton>(Resource.Id.share_button).Enabled = hasMediaItems;
+            });
 
             // Populate the ViewPager and implement a cache of two media items
-            var mediaViewPager = view.FindViewById<ViewPager>(Resource.Id.photo_view_pager);
-            mediaViewPager.OffscreenPageLimit = 2;
-            mediaViewPager.Adapter = new MediaPagerAdapter(this, this.ChildFragmentManager);
+            var photoViewPager = view.FindViewById<ViewPager2>(Resource.Id.photo_view_pager);
+            photoViewPager.OffscreenPageLimit = 2;
+            photoViewPager.Adapter = new MediaPagerAdapter(this, ChildFragmentManager, mediaList);
+            (photoViewPager.Adapter as MediaPagerAdapter)
+                .SetMediaListAndNotify(mediaList);
 
             // Make sure that the cutout "safe area" avoids the screen notch if any
             if (Build.VERSION.SdkInt >= BuildVersionCodes.P)
@@ -94,24 +92,23 @@ namespace CameraXBasic.Fragments
             // Handle back button press
             view.FindViewById<ImageButton>(Resource.Id.back_button).Click += (sender, e) =>
             {
-                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).NavigateUp();
+                Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container)
+                    .NavigateUp();
             };
 
             // Handle share button press
             view.FindViewById<ImageButton>(Resource.Id.share_button).Click += (sender, e) =>
             {
-                File mediaFile = mediaList[mediaViewPager.CurrentItem];
+                var mediaStoreFile = mediaList.ElementAtOrDefault(photoViewPager.CurrentItem);
+                var mediaUri = mediaStoreFile.Uri;
                 // Create a sharing intent
                 var intent = new Intent();
-                // Infer media type from file extension
-                string mediaType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(MimeTypeMap.GetFileExtensionFromUrl(mediaFile.Path));
-                // Get URI from our FileProvider implementation
-                Uri uri = FileProvider.GetUriForFile(view.Context, Context.PackageName + ".provider", mediaFile);
+                var mediaType = RequireContext().ContentResolver.GetType(mediaUri);
                 // Set the appropriate intent extra, type, action and flags
-                intent.PutExtra(Intent.ExtraStream, uri);
                 intent.SetType(mediaType);
                 intent.SetAction(Intent.ActionSend);
                 intent.AddFlags(ActivityFlags.GrantReadUriPermission);
+                intent.PutExtra(Intent.ExtraStream, mediaUri);
 
                 // Launch the intent letting the user choose which app to share with
                 StartActivity(Intent.CreateChooser(intent, GetString(Resource.String.share_hint)));
@@ -120,31 +117,37 @@ namespace CameraXBasic.Fragments
             // Handle delete button press
             view.FindViewById<ImageButton>(Resource.Id.delete_button).Click += (sender, e) =>
             {
-                File mediaFile = mediaList[mediaViewPager.CurrentItem];
+                var mediaStoreFile = mediaList.ElementAtOrDefault(photoViewPager.CurrentItem);
+                var mediaUri = mediaStoreFile.Uri;
                 new AlertDialog.Builder(view.Context, Android.Resource.Style.ThemeMaterialDialog)
-                .SetTitle(GetString(Resource.String.delete_title))
-                .SetMessage(GetString(Resource.String.delete_dialog))
-                .SetIcon(Android.Resource.Drawable.IcDialogAlert)
-                .SetPositiveButton(Android.Resource.String.Yes, (sender2, e2) =>
-                {
-                    // Delete current photo
-                    mediaFile.Delete();
-
-                    // Send relevant broadcast to notify other apps of deletion
-                    MediaScannerConnection.ScanFile(view.Context, new[] { mediaFile.AbsolutePath }, null, null);
-
-                    // Notify our view pager
-                    mediaList.RemoveAt(mediaViewPager.CurrentItem);
-                    mediaViewPager.Adapter.NotifyDataSetChanged();
-
-                    // If all photos have been deleted, return to camera
-                    if (!mediaList.Any())
+                    .SetTitle(GetString(Resource.String.delete_title))
+                    .SetMessage(GetString(Resource.String.delete_dialog))
+                    .SetIcon(Android.Resource.Drawable.IcDialogAlert)
+                    .SetPositiveButton(Android.Resource.String.Ok, (sender2, e2) =>
                     {
-                        Navigation.FindNavController(RequireActivity(), Resource.Id.fragment_container).NavigateUp();
-                    }
-                })
-                .SetNegativeButton(Android.Resource.String.No, handler: null)
-                .Create().ShowImmersive();
+                        // Delete current photo
+                        RequireContext().ContentResolver.Delete(mediaUri, null, null);
+
+                        // Send relevant broadcast to notify other apps of deletion
+                        MediaScannerConnection.ScanFile(
+                            view.Context, new[] { mediaUri.ToString() }, null, null
+                        );
+
+                        // Notify our view pager
+                        mediaList.RemoveAt(photoViewPager.CurrentItem);
+                        photoViewPager.Adapter.NotifyDataSetChanged();
+
+                        // If all photos have been deleted, return to camera
+                        if (!mediaList.Any())
+                        {
+                            Navigation.FindNavController(
+                                RequireActivity(),
+                                Resource.Id.fragment_container
+                            ).NavigateUp();
+                        }
+                    })
+                    .SetNegativeButton(Android.Resource.String.Cancel, handler: null)
+                    .Create().ShowImmersive();
             };
         }
     }

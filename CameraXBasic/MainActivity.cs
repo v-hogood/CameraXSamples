@@ -1,15 +1,11 @@
-﻿using System.Linq;
-using Android.App;
+﻿using Android.App;
 using Android.Content;
-using Android.Content.PM;
 using Android.OS;
-using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.LocalBroadcastManager.Content;
-using Java.IO;
 
 namespace CameraXBasic
 {
@@ -50,7 +46,9 @@ namespace CameraXBasic
             {
                 var intent = new Intent(KeyEventAction);
                 intent.PutExtra(KeyEventExtra, (int) keyCode);
+#pragma warning disable 0618
                 LocalBroadcastManager.GetInstance(this).SendBroadcast(intent);
+#pragma warning restore 0618
                 return true;
             }
             else
@@ -71,17 +69,6 @@ namespace CameraXBasic
             {
                 base.OnBackPressed();
             }
-        }
-
-        // Use external media if it is available, our app's file directory otherwise
-        public static File GetOutputDirectory(Context context)
-        {
-            var appContext = context.ApplicationContext;
-            var mediaDir = new File(context.GetExternalMediaDirs().FirstOrDefault(),
-                appContext.GetString(Resource.String.app_name));
-            mediaDir?.Mkdirs();
-            return mediaDir != null && mediaDir.Exists() ?
-                mediaDir : appContext.FilesDir;
         }
 
         private void HideSystemUI()
