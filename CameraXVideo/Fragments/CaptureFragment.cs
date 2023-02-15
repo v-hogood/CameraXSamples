@@ -166,11 +166,23 @@ namespace CameraXVideo
             var contentValues = new ContentValues();
             contentValues.Put(MediaStore.IMediaColumns.DisplayName, name);
 
+            /*
             var mediaStoreOutput = new MediaStoreOutputOptions.Builder(
                 RequireActivity().ContentResolver,
                 MediaStore.Video.Media.ExternalContentUri)
                 .SetContentValues(contentValues)
                 .Build();
+            */
+            IntPtr classPtr = JNIEnv.FindClass("androidx/camera/video/MediaStoreOutputOptions$Builder");
+            IntPtr constructorPtr = JNIEnv.GetMethodID(classPtr, "<init>", "(Landroid/content/ContentResolver;Landroid/net/Uri;)V");
+            IntPtr setContentValuesPtr = JNIEnv.GetMethodID(classPtr, "setContentValues", "(Landroid/content/ContentValues;)Landroidx/camera/video/MediaStoreOutputOptions$Builder;");
+            IntPtr buildPtr = JNIEnv.GetMethodID(classPtr, "build", "()Landroidx/camera/video/MediaStoreOutputOptions;");
+            IntPtr builderPtr = JNIEnv.NewObject(classPtr, constructorPtr, new JValue[]
+                { new JValue(RequireActivity().ContentResolver), new JValue(MediaStore.Video.Media.ExternalContentUri) });
+            builderPtr = JNIEnv.CallNonvirtualObjectMethod(builderPtr, classPtr, setContentValuesPtr, new JValue(contentValues));
+            IntPtr mediaStoreOutputOptionsPtr = JNIEnv.CallNonvirtualObjectMethod(builderPtr, classPtr, buildPtr);
+            var mediaStoreOutput = new Java.Lang.Object(mediaStoreOutputOptionsPtr, JniHandleOwnership.TransferLocalRef)
+                .JavaCast<MediaStoreOutputOptions>();
 
             // configure Recorder and Start recording to the mediaStoreOutput.
             var pendingRecording = (videoCapture.Output as Recorder)
