@@ -178,6 +178,8 @@ namespace CameraXTfLite
             }
         }
 
+        Size ImageAnalysis.IAnalyzer.DefaultTargetResolution => null;
+
         public void Analyze(IImageProxy image)
         {
             // Early exit: image analysis is in paused state

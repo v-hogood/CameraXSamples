@@ -1,7 +1,7 @@
+using Android.Annotation;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
-using AndroidX.Annotations;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using Object = Java.Lang.Object;
@@ -31,7 +31,7 @@ namespace CameraXBasic.Utils
         }
 
         // Pad this view with the insets provided by the device cutout (i.e. notch)
-        [ RequiresApi (Value = (int) BuildVersionCodes.P) ]
+        [ TargetApi (Value = (int) BuildVersionCodes.P) ]
         public static void PadWithDisplayCutout(this View view)
         {
             // Apply padding using the display cutout designated "safe area"

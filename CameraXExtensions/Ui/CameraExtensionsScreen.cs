@@ -9,13 +9,13 @@ using Android.Widget;
 using AndroidX.Camera.View;
 using AndroidX.Core.View;
 using AndroidX.DynamicAnimation;
+using AndroidX.Lifecycle;
 using AndroidX.RecyclerView.Widget;
 using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
 using static AndroidX.Core.View.ViewKt;
 using static AndroidX.Lifecycle.LifecycleOwnerKt;
-using static AndroidX.Lifecycle.ViewKt;
 using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
 
 namespace CameraXExtensions
@@ -55,6 +55,9 @@ namespace CameraXExtensions
 
         private IMutableStateFlow action = MutableStateFlow(new CameraUiAction());
         public IFlow Action;
+
+        public static ILifecycleOwner FindViewTreeLifecycleOwner(View root) =>
+            root.Context as ILifecycleOwner;
 
         public ICoroutineContext Context => GetLifecycleScope(FindViewTreeLifecycleOwner(root)).CoroutineContext;
 

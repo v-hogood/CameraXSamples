@@ -641,6 +641,8 @@ namespace CameraXBasic.Fragments
             private double framesPerSecond = -1.0;
             private byte[] data;
 
+            Size ImageAnalysis.IAnalyzer.DefaultTargetResolution => null;
+
             public LuminosityAnalyzer(LumaListener listener)
                 : base()
             {

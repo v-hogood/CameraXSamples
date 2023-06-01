@@ -52,12 +52,12 @@
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.Android.Glide" Version="4.14.2.1" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.2.1" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.2.1" />
-    <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.3.1" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.8" />
-    <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.6.4.2" />
+    <PackageReference Include="Xamarin.Android.Glide" Version="4.15.1.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.2.3" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.2.3" />
+    <PackageReference Include="Xamarin.AndroidX.Navigation.Fragment" Version="2.5.3.3" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.9.0.1" />
+    <PackageReference Include="Xamarin.KotlinX.Coroutines.Core" Version="1.7.1.1" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Fragments\CameraFragment.cs" />
