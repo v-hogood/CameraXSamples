@@ -2,11 +2,11 @@ using Android.Content;
 using Android.Util;
 using Android.Views;
 using Android.Views.Animations;
-using Android.Widget;
 using AndroidX.RecyclerView.Widget;
 using Java.Lang;
 using static AndroidX.RecyclerView.Widget.RecyclerView;
 using static AndroidX.RecyclerView.Widget.RecyclerView.SmoothScroller;
+using Math = System.Math;
 
 namespace CameraXExtensions
 {

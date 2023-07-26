@@ -9,19 +9,13 @@
 //   - CameraX notify this app that the recording is indeed stopped, with the Finalize event.
 //   - this app starts VideoViewer fragment to view the captured result.
 //
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Android.Content;
 using Android.Content.Res;
 using Android.Media;
-using Android.OS;
 using Android.Provider;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
-using Android.Widget;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.Video;
@@ -29,7 +23,6 @@ using AndroidX.Camera.View;
 using AndroidX.ConstraintLayout.Widget;
 using AndroidX.Core.Content;
 using AndroidX.Core.Util;
-using AndroidX.Fragment.App;
 using AndroidX.Lifecycle;
 using AndroidX.Navigation;
 using AndroidX.RecyclerView.Widget;
@@ -42,6 +35,7 @@ using Kotlin.Jvm.Functions;
 using Xamarin.KotlinX.Coroutines;
 using static AndroidX.Lifecycle.LifecycleOwnerKt;
 using Exception = Java.Lang.Exception;
+using Fragment = AndroidX.Fragment.App.Fragment;
 using Object = Java.Lang.Object;
 using Orientation = Android.Content.Res.Orientation;
 using VideoCapture = AndroidX.Camera.Video.VideoCapture;
@@ -166,23 +160,11 @@ namespace CameraXVideo
             var contentValues = new ContentValues();
             contentValues.Put(MediaStore.IMediaColumns.DisplayName, name);
 
-            /*
             var mediaStoreOutput = new MediaStoreOutputOptions.Builder(
                 RequireActivity().ContentResolver,
                 MediaStore.Video.Media.ExternalContentUri)
                 .SetContentValues(contentValues)
                 .Build();
-            */
-            IntPtr classPtr = JNIEnv.FindClass("androidx/camera/video/MediaStoreOutputOptions$Builder");
-            IntPtr constructorPtr = JNIEnv.GetMethodID(classPtr, "<init>", "(Landroid/content/ContentResolver;Landroid/net/Uri;)V");
-            IntPtr setContentValuesPtr = JNIEnv.GetMethodID(classPtr, "setContentValues", "(Landroid/content/ContentValues;)Landroidx/camera/video/MediaStoreOutputOptions$Builder;");
-            IntPtr buildPtr = JNIEnv.GetMethodID(classPtr, "build", "()Landroidx/camera/video/MediaStoreOutputOptions;");
-            IntPtr builderPtr = JNIEnv.NewObject(classPtr, constructorPtr, new JValue[]
-                { new JValue(RequireActivity().ContentResolver), new JValue(MediaStore.Video.Media.ExternalContentUri) });
-            builderPtr = JNIEnv.CallNonvirtualObjectMethod(builderPtr, classPtr, setContentValuesPtr, new JValue(contentValues));
-            IntPtr mediaStoreOutputOptionsPtr = JNIEnv.CallNonvirtualObjectMethod(builderPtr, classPtr, buildPtr);
-            var mediaStoreOutput = new Java.Lang.Object(mediaStoreOutputOptionsPtr, JniHandleOwnership.TransferLocalRef)
-                .JavaCast<MediaStoreOutputOptions>();
 
             // configure Recorder and Start recording to the mediaStoreOutput.
             var pendingRecording = (videoCapture.Output as Recorder)

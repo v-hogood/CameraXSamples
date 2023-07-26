@@ -1,17 +1,12 @@
 ﻿using Android;
-using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
 using Android.Hardware.Camera2;
-using Android.Net;
-using Android.OS;
 using Android.Provider;
 using Android.Renderscripts;
-using Android.Runtime;
 using Android.Util;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Camera.Camera2.InterOp;
 using AndroidX.Camera.Core;
@@ -24,6 +19,10 @@ using Google.Android.Material.Snackbar;
 using Google.Common.Util.Concurrent;
 using Java.Lang;
 using Java.Util.Concurrent;
+using Math = System.Math;
+using Object = Java.Lang.Object;
+using Range = Android.Util.Range;
+using Uri = Android.Net.Uri;
 
 namespace HdrViewfinder
 {

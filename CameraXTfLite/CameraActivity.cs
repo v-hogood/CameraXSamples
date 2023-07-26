@@ -1,14 +1,9 @@
-using System.IO;
-using System.Linq;
 using Android;
-using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
-using Android.OS;
 using Android.Util;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Lifecycle;
@@ -27,6 +22,7 @@ using TensorFlow.Lite.Support.Image.Ops;
 using TensorFlow.Lite.Support.Metadata;
 using Xamarin.TensorFlow.Lite;
 using Xamarin.TensorFlow.Lite.Nnapi;
+using Math = System.Math;
 
 namespace CameraXTfLite
 {

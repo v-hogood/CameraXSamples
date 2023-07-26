@@ -1,9 +1,8 @@
-using System.Collections.Generic;
 using Android.Content;
 using Android.Database;
-using Android.Net;
 using Android.OS;
 using Android.Provider;
+using Uri = Android.Net.Uri;
 
 namespace CameraXBasic.Utils
 {

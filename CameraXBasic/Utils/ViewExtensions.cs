@@ -1,9 +1,8 @@
 using Android.Annotation;
 using Android.OS;
 using Android.Views;
-using Android.Widget;
-using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
+using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
 using Object = Java.Lang.Object;
 
 namespace CameraXBasic.Utils

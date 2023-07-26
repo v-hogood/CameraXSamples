@@ -1,6 +1,6 @@
 ﻿using Android.Graphics;
-using Android.Media;
 using Android.Util;
+using Orientation = Android.Media.Orientation;
 
 namespace Camera.Utils
 {

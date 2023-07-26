@@ -29,8 +29,6 @@
     <!-- Declare permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
-
     <application
         android:name=".MainApplication"
         android:icon="@mipmap/ic_launcher"

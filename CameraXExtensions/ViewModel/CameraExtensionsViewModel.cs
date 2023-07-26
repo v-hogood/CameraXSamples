@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using Android.App;
 using Android.Content;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Extensions;
@@ -8,7 +5,6 @@ using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.Core.Content;
 using AndroidX.Lifecycle;
-using Java.IO;
 using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines;
@@ -17,6 +13,8 @@ using static AndroidX.Core.Net.UriKt;
 using static AndroidX.Lifecycle.ViewModelKt;
 using static Xamarin.KotlinX.Coroutines.ExecutorsKt;
 using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
+using File = Java.IO.File;
+using Object = Java.Lang.Object;
 
 namespace CameraXExtensions
 {

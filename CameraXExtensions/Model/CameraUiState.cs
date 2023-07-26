@@ -1,7 +1,7 @@
-using System.Collections.Generic;
 using Android.Hardware.Camera2;
 using AndroidX.Camera.Core;
-using Java.Lang;
+using Exception = Java.Lang.Exception;
+using Object = Java.Lang.Object;
 
 namespace CameraXExtensions
 {

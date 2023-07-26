@@ -1,18 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Android.Content;
+﻿using Android.Content;
 using Android.Media;
 using Android.OS;
 using Android.Views;
-using Android.Widget;
-using AndroidX.AppCompat.App;
 using AndroidX.ConstraintLayout.Widget;
-using AndroidX.Fragment.App;
 using AndroidX.Navigation;
 using AndroidX.ViewPager2.Adapter;
 using AndroidX.ViewPager2.Widget;
 using CameraXBasic.Utils;
 using static AndroidX.Lifecycle.LifecycleOwnerKt;
+using AlertDialog = AndroidX.AppCompat.App.AlertDialog;
+using Fragment = AndroidX.Fragment.App.Fragment;
+using FragmentManager = AndroidX.Fragment.App.FragmentManager;
 
 namespace CameraXBasic.Fragments
 {

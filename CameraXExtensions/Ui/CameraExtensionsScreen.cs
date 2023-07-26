@@ -1,22 +1,19 @@
-using System.Collections.Generic;
-using System.Linq;
 using Android.Animation;
 using Android.Content;
-using Android.Net;
 using Android.Util;
 using Android.Views;
-using Android.Widget;
 using AndroidX.Camera.View;
 using AndroidX.Core.View;
 using AndroidX.DynamicAnimation;
 using AndroidX.Lifecycle;
 using AndroidX.RecyclerView.Widget;
-using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
 using static AndroidX.Core.View.ViewKt;
 using static AndroidX.Lifecycle.LifecycleOwnerKt;
 using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
+using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 namespace CameraXExtensions
 {

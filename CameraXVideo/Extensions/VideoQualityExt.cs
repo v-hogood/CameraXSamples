@@ -1,4 +1,3 @@
-using System;
 using Android.Media;
 using Android.Runtime;
 using AndroidX.Camera.Core;

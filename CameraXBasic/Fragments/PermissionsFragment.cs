@@ -1,17 +1,14 @@
-﻿using System;
-using System.Linq;
-using Android;
+﻿using Android;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
-using Android.Widget;
 using AndroidX.Activity.Result;
 using AndroidX.Activity.Result.Contract;
 using AndroidX.Core.Content;
-using AndroidX.Fragment.App;
 using AndroidX.Navigation;
 using Java.Util;
 using Java.Util.Functions;
+using Fragment = AndroidX.Fragment.App.Fragment;
 using Object = Java.Lang.Object;
 
 namespace CameraXBasic.Fragments

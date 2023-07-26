@@ -21,8 +21,6 @@
     <!-- Permission declarations -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
-
     <application
         android:name=".app.CameraExtensionsApplication"
         android:allowBackup="false"
@@ -31,9 +29,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CameraXExtensions"
-        tools:targetApi="33">
+        tools:targetApi="34">
         <activity
-            android:name="com.android.examples.cameraxextensions.MainActivity"
+            android:name="com.android.example.cameraxextensions.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

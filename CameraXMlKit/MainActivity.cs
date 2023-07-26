@@ -1,20 +1,15 @@
-using System.Collections.Generic;
-using System.Linq;
 using Android;
-using Android.App;
 using Android.Content.PM;
-using Android.OS;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Camera.View;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Core.Util;
-using Java.Lang;
 using Java.Util.Concurrent;
 using Xamarin.Google.MLKit.Vision.Barcode.Common;
 using Xamarin.Google.MLKit.Vision.BarCode;
 using Xamarin.Google.MLKit.Vision.Interfaces;
+using Object = Java.Lang.Object;
 
 namespace CameraXMlKit
 {

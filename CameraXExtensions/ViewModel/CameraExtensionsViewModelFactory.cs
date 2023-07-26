@@ -1,6 +1,6 @@
-using Android.App;
 using Java.Lang;
 using static AndroidX.Lifecycle.ViewModelProvider;
+using Object = Java.Lang.Object;
 
 namespace CameraXExtensions
 {
@@ -21,9 +21,6 @@ namespace CameraXExtensions
         private Application application;
         private ImageCaptureRepository imageCaptureRepository;
 
-        public override Object Create(Class modelClass)
-        {
-            return new CameraExtensionsViewModel(application, imageCaptureRepository);
-        }
+        public override Object Create(Class modelClass) => new CameraExtensionsViewModel(application, imageCaptureRepository);
     }
 }

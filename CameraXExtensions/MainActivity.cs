@@ -1,9 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Android;
-using Android.App;
+﻿using Android;
 using Android.Content.PM;
-using Android.OS;
 using AndroidX.Activity;
 using AndroidX.Activity.Result;
 using AndroidX.Activity.Result.Contract;
@@ -20,6 +16,8 @@ using static AndroidX.Lifecycle.RepeatOnLifecycleKt;
 using static CameraXExtensions.BuildersKtx;
 using static Xamarin.KotlinX.Coroutines.Flow.FlowKt;
 using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
+using Boolean = Java.Lang.Boolean;
+using Object = Java.Lang.Object;
 
 //
 // Displays the camera preview with camera controls and available extensions. Tapping on the shutter
@@ -27,7 +25,7 @@ using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
 //
 namespace CameraXExtensions
 {
-    [Activity(Name = "com.android.examples.cameraxextensions.MainActivity", Label = "@string/app_name", Theme = "@style/Theme.CameraXExtensions", MainLauncher = true)]
+    [Activity(Name = "com.android.example.cameraxextensions.MainActivity", Label = "@string/app_name", Theme = "@style/Theme.CameraXExtensions", MainLauncher = true)]
     public class MainActivity : AppCompatActivity,
         IActivityResultCallback,
         IContinuation,

@@ -1,4 +1,4 @@
-using Java.Lang;
+using Object = Java.Lang.Object;
 
 namespace CameraXExtensions
 {

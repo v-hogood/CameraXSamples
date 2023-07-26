@@ -1,8 +1,7 @@
 using Android.Graphics;
 using Android.Views;
-using Android.Widget;
 using AndroidX.RecyclerView.Widget;
-using Java.Lang;
+using Object = Java.Lang.Object;
 
 namespace CameraXExtensions
 {

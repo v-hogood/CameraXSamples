@@ -27,8 +27,6 @@
     <!-- A camera with burst capability is required to use this application -->
     <uses-feature android:name="android.hardware.camera.any" />
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
-
     <application
         android:name=".MainApplication"
         android:allowBackup="true"

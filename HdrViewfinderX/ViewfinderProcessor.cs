@@ -2,7 +2,8 @@
 using Android.Renderscripts;
 using Android.Util;
 using Android.Views;
-using Java.Lang;
+using Object = Java.Lang.Object;
+using Type = Android.Renderscripts.Type;
 
 namespace HdrViewfinder
 {

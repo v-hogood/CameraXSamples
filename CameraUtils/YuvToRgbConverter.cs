@@ -5,6 +5,7 @@ using Android.Graphics;
 using Android.Media;
 using Android.Renderscripts;
 using Java.Nio;
+using Type = Android.Renderscripts.Type;
 
 namespace Camera.Utils
 {

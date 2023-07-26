@@ -1,15 +1,14 @@
 using Android.Database;
 using Android.Media;
-using Android.Net;
 using Android.OS;
 using Android.Provider;
 using Android.Util;
 using Android.Views;
-using Android.Widget;
-using AndroidX.Fragment.App;
 using AndroidX.Navigation;
 using Java.Lang;
 using static AndroidX.Lifecycle.LifecycleOwnerKt;
+using Fragment = AndroidX.Fragment.App.Fragment;
+using Uri = Android.Net.Uri;
 
 namespace CameraXVideo
 {

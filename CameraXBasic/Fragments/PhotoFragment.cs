@@ -1,10 +1,8 @@
-using Android.Net;
-using Android.OS;
 using Android.Views;
-using Android.Widget;
-using AndroidX.Fragment.App;
 using Bumptech.Glide;
 using CameraXBasic.Utils;
+using Fragment = AndroidX.Fragment.App.Fragment;
+using Uri = Android.Net.Uri;
 
 namespace CameraXBasic.Fragments
 {

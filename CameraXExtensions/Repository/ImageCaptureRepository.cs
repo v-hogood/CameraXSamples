@@ -1,15 +1,14 @@
-using System.Linq;
 using Android.Content;
 using Android.Hardware;
 using Android.Media;
-using Android.Net;
 using Android.Webkit;
 using AndroidX.Core.Content;
-using Java.IO;
-using Java.Lang;
 using Java.Util;
 using static AndroidX.Core.Net.UriKt;
 using static Kotlin.IO.FilesKt;
+using File = Java.IO.File;
+using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 namespace CameraXExtensions
 {

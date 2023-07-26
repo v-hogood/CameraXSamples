@@ -1,8 +1,5 @@
-﻿using Android.App;
-using Android.Content.PM;
-using Android.OS;
+﻿using Android.Content.PM;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 

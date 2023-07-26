@@ -1,5 +1,5 @@
-using Android.Net;
-using Java.Lang;
+using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 namespace CameraXExtensions
 {

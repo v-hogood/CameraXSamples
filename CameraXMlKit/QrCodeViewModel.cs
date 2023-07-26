@@ -1,9 +1,9 @@
 using Android.Content;
 using Android.Graphics;
-using Android.Net;
 using Android.Views;
-using Java.Lang;
 using Xamarin.Google.MLKit.Vision.Barcode.Common;
+using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 namespace CameraXMlKit
 {
