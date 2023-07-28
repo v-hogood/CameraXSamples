@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net7.0-android</TargetFramework>
     <SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 </Project>

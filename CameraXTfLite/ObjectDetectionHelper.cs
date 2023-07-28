@@ -38,10 +38,12 @@ namespace CameraXTfLite
 
             outputBuffer = new Dictionary<Integer, Object>()
             {
+#pragma warning disable CA1422
                 [new Integer(0)] = Locations,
                 [new Integer(1)] = LabelIndices,
                 [new Integer(2)] = Scores,
                 [new Integer(3)] = new float[1],
+#pragma warning restore CA1422
             };
         }
 

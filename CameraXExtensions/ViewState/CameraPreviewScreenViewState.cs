@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using static CameraXExtensions.CameraPreviewScreenViewState;
 
 namespace System.Runtime.CompilerServices

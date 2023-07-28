@@ -12,6 +12,8 @@ namespace HdrViewfinder
     //
     public class ViewfinderProcessor : Object, Allocation.IOnBufferAvailableListener
     {
+#pragma warning disable CA1422
+#pragma warning disable 0618
         private Allocation mInputHdrAllocation;
         private Allocation mPrevAllocation;
         private Allocation mOutputAllocation;
@@ -116,5 +118,7 @@ namespace HdrViewfinder
 
             mOutputAllocation.IoSend();
         }
+#pragma warning restore 0618
+#pragma warning restore CA1422
     }
 }

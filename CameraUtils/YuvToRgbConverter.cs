@@ -22,6 +22,7 @@ namespace Camera.Utils
     // required to convert each frame.
     public class YuvToRgbConverter
     {
+#pragma warning disable CA1422
         public YuvToRgbConverter(Context context)
         {
             rs = RenderScript.Create(context);
@@ -67,7 +68,9 @@ namespace Camera.Utils
             }
 
             // Convert NV21 or YV12 format YUV to RGB
+#pragma warning disable 0618
             inputAllocation.CopyFrom(yuvBuffer);
+#pragma warning restore 0618
             scriptYuvToRgb.SetInput(inputAllocation);
             scriptYuvToRgb.ForEach(outputAllocation);
             outputAllocation.CopyTo(output);
@@ -285,5 +288,6 @@ namespace Camera.Utils
 
             return format;
         }
+#pragma warning restore CA1422
     }
 }

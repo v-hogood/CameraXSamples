@@ -1,8 +1,6 @@
-﻿using Android.App;
-using Android.Content;
+﻿using Android.Content;
 using Android.OS;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.LocalBroadcastManager.Content;
@@ -67,7 +65,9 @@ namespace CameraXBasic
             }
             else
             {
+#pragma warning disable CA1422
                 base.OnBackPressed();
+#pragma warning restore CA1422
             }
         }
 

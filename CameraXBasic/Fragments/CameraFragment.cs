@@ -13,7 +13,6 @@ using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.ConstraintLayout.Widget;
 using AndroidX.Core.Content;
-using AndroidX.Fragment.App;
 using AndroidX.Lifecycle;
 using AndroidX.LocalBroadcastManager.Content;
 using AndroidX.Window.Layout;
@@ -589,8 +588,10 @@ namespace CameraXBasic.Fragments
             {
                 // Suppress deprecated Camera usage needed for API level 23 and below
 #pragma warning disable 0618
+#pragma warning disable CA1422
                 RequireActivity().SendBroadcast(new
                     Intent(Android.Hardware.Camera.ActionNewPicture, savedUri));
+#pragma warning restore CA1422
 #pragma warning restore 0618
             }
         }

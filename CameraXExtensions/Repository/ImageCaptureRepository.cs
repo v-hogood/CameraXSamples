@@ -34,7 +34,9 @@ namespace CameraXExtensions
         {
             // Use external media if it is available and this app's file directory otherwise
             var appContext = context.ApplicationContext;
+#pragma warning disable CA1422
             var mediaDir = new File(context.GetExternalMediaDirs().FirstOrDefault(),
+#pragma warning restore CA1422
                 appContext.Resources.GetString(Resource.String.app_name));
             mediaDir?.Mkdirs();
             var file = mediaDir.Exists() ? mediaDir : appContext.FilesDir;
@@ -47,7 +49,11 @@ namespace CameraXExtensions
             var fileProviderUri =
                 FileProvider.GetUriForFile(context, context.PackageName + ".provider", file);
             context.SendBroadcast(new
+#pragma warning disable 0618
+#pragma warning disable CA1422
                 Intent(Camera.ActionNewPicture, fileProviderUri)
+#pragma warning restore CA1422
+#pragma warning restore 0618
             );
 
             // Notify other apps so they can access the captured image

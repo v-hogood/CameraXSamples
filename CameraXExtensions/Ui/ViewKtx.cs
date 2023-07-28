@@ -1,8 +1,6 @@
-using System;
 using Android.Runtime;
 using Android.Views;
 using AndroidX.Core.View;
-using Java.Lang;
 using Kotlin.Coroutines;
 using Kotlin.Jvm.Functions;
 using Xamarin.KotlinX.Coroutines;

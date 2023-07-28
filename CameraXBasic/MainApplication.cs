@@ -1,5 +1,3 @@
-using System;
-using Android.App;
 using Android.Runtime;
 using Android.Util;
 using AndroidX.Camera.Camera2;

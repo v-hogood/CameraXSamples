@@ -132,7 +132,9 @@ namespace HdrViewfinder
 
             mExecutor = Executors.NewSingleThreadExecutor();
 
+#pragma warning disable CA1422
             mRS = RenderScript.Create(this);
+#pragma warning restore CA1422
         }
 
         protected override void OnResume()
