@@ -17,6 +17,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using AndroidX.Camera.Core;
+using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.Video;
 using AndroidX.Camera.View;
@@ -102,13 +103,19 @@ namespace CameraXVideo
                 var quality = cameraCapabilities[cameraIndex].Qualities[qualityIndex];
                 var qualitySelector = QualitySelector.From(quality);
 
+                var resolutionSelector = new ResolutionSelector.Builder().
+                   SetAspectRatioStrategy(quality.GetAspectRatio() == AspectRatio.Ratio169 ?
+                       AspectRatioStrategy.Ratio169FallbackAutoStrategy :
+                       AspectRatioStrategy.Ratio43FallbackAutoStrategy)
+                   .Build();
+
                 var orientation = Resources.Configuration.Orientation;
                 (previewView.LayoutParameters as ConstraintLayout.LayoutParams).
                     DimensionRatio = quality.GetAspectRatioString(
                         (orientation == Orientation.Portrait));
 
                 var preview = new Preview.Builder()
-                    .SetTargetAspectRatio(quality.GetAspectRatio())
+                    .SetResolutionSelector(resolutionSelector)
                     .Build();
 
                 preview.SetSurfaceProvider(previewView.SurfaceProvider);
@@ -251,8 +258,8 @@ namespace CameraXVideo
                             cameraCapabilities.Add(new CameraCapability()
                             {
                                 CamSelector = camSelector,
-                                Qualities = QualitySelector
-                                    .GetSupportedQualities(camera.CameraInfo)
+                                Qualities = Recorder.GetVideoCapabilities(camera.CameraInfo)
+                                    .GetSupportedQualities(new DynamicRange(DynamicRange.EncodingSdr, DynamicRange.BitDepth8Bit))
                                     .Where(quality => new CamcorderQuality[] { CamcorderQuality.Q2160p, CamcorderQuality.Q1080p, CamcorderQuality.Q720p, CamcorderQuality.Q480p }
                                         .Contains(quality.GetValue())).ToList()
                             });

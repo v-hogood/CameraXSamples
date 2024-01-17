@@ -9,6 +9,7 @@ using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using AndroidX.Camera.Core;
+using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.ConstraintLayout.Widget;
@@ -257,7 +258,7 @@ namespace CameraXBasic.Fragments
             var metrics = windowMetricsCalculator.ComputeCurrentWindowMetrics(RequireActivity()).Bounds;
             Log.Debug(Tag, "Screen metrics: " + metrics);
 
-            var screenAspectRatio = AspectRatio(metrics.Width(), metrics.Height());
+            var screenAspectRatio = GetAspectRatio(metrics.Width(), metrics.Height());
             Log.Debug(Tag, "Preview aspect ratio: " + screenAspectRatio);
 
             var rotation = viewFinder.Display.Rotation;
@@ -269,10 +270,17 @@ namespace CameraXBasic.Fragments
             // CameraSelector
             var cameraSelector = (new CameraSelector.Builder()).RequireLensFacing(lensFacing).Build();
 
+            // ResolutionSelector
+            var resolutionSelector = new ResolutionSelector.Builder().
+                SetAspectRatioStrategy(screenAspectRatio == AspectRatio.Ratio169 ?
+                    AspectRatioStrategy.Ratio169FallbackAutoStrategy :
+                    AspectRatioStrategy.Ratio43FallbackAutoStrategy)
+                .Build();
+
             // Preview
             preview = new Preview.Builder()
                 // We request aspect ratio but no resolution
-                .SetTargetAspectRatio(screenAspectRatio)
+                .SetResolutionSelector(resolutionSelector)
                 // Set initial target rotation
                 .SetTargetRotation((int) rotation)
                 .Build();
@@ -282,7 +290,7 @@ namespace CameraXBasic.Fragments
                 .SetCaptureMode(ImageCapture.CaptureModeMinimizeLatency)
                 // We request aspect ratio but no resolution to match preview config, but letting
                 // CameraX optimize for whatever specific resolution best fits our use cases
-                .SetTargetAspectRatio(screenAspectRatio)
+                .SetResolutionSelector(resolutionSelector)
                 // Set initial target rotation, we will have to call this again if rotation changes
                 // during the lifecycle of this use case
                 .SetTargetRotation((int) rotation)
@@ -291,7 +299,7 @@ namespace CameraXBasic.Fragments
             // ImageAnalysis
             imageAnalyzer = new ImageAnalysis.Builder()
                 // We request aspect ratio but no resolution
-                .SetTargetAspectRatio(screenAspectRatio)
+                .SetResolutionSelector(resolutionSelector)
                 // Set initial target rotation, we will have to call this again if rotation changes
                 // during the lifecycle of this use case
                 .SetTargetRotation((int) rotation)
@@ -452,14 +460,14 @@ namespace CameraXBasic.Fragments
         //  @param width - preview width
         //  @param height - preview height
         //  @return suitable aspect ratio
-        private int AspectRatio(int width, int height)
+        private int GetAspectRatio(int width, int height)
         {
             var previewRatio = (double) Math.Max(width, height) / Math.Min(width, height);
             if (Math.Abs(previewRatio - Ratio4To3Value) <= Math.Abs(previewRatio - Ratio16To9Value))
             {
-                return AndroidX.Camera.Core.AspectRatio.Ratio43;
+                return AspectRatio.Ratio43;
             }
-            return AndroidX.Camera.Core.AspectRatio.Ratio169;
+            return AspectRatio.Ratio169;
         }
 
         // Method used to re-draw the camera UI controls, called every time configuration changes.

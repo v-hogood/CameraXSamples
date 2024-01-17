@@ -10,6 +10,7 @@ using Android.Views;
 using AndroidX.AppCompat.App;
 using AndroidX.Camera.Camera2.InterOp;
 using AndroidX.Camera.Core;
+using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.Core.App;
@@ -382,9 +383,13 @@ namespace HdrViewfinder
                     // Find first back-facing camera that has necessary capability.
                     CameraSelector cameraSelector = new CameraSelector.Builder().RequireLensFacing((int)mLensFacing).Build();
 
+                    ResolutionSelector resolutionSelector = new ResolutionSelector.Builder().
+                        SetAspectRatioStrategy(AspectRatioStrategy.Ratio43FallbackAutoStrategy)
+                        .Build();
+
                     // Find a good size for output - largest 4:3 aspect ratio that's less than 720p
                     Preview.Builder previewBuilder = new Preview.Builder()
-                        .SetTargetAspectRatio(AspectRatio.Ratio43);
+                        .SetResolutionSelector(resolutionSelector);
                     Camera2Interop.Extender previewExtender = new Camera2Interop.Extender(previewBuilder);
                     previewExtender.SetSessionCaptureCallback(mCaptureCallback);
                     Preview preview = previewBuilder.Build();

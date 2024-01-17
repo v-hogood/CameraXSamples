@@ -1,5 +1,6 @@
 using Android.Content;
 using AndroidX.Camera.Core;
+using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Extensions;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
@@ -56,12 +57,16 @@ namespace CameraXExtensions
         private ICamera camera;
         private File photoFile;
 
+        private static ResolutionSelector resolutionSelector = new ResolutionSelector.Builder().
+            SetAspectRatioStrategy(AspectRatioStrategy.Ratio169FallbackAutoStrategy)
+            .Build();
+
         private ImageCapture imageCapture = new ImageCapture.Builder()
-            .SetTargetAspectRatio(AspectRatio.Ratio169)
+            .SetResolutionSelector(resolutionSelector)
             .Build();
 
         private Preview preview = new Preview.Builder()
-            .SetTargetAspectRatio(AspectRatio.Ratio169)
+            .SetResolutionSelector(resolutionSelector)
             .Build();
 
         private IMutableStateFlow cameraUiState = MutableStateFlow(new CameraUiState());

@@ -6,6 +6,7 @@ using Android.Util;
 using Android.Views;
 using AndroidX.AppCompat.App;
 using AndroidX.Camera.Core;
+using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.ConstraintLayout.Widget;
@@ -132,15 +133,20 @@ namespace CameraXTfLite
                     // Camera provider is now guaranteed to be available
                     var cameraProvider = cameraProviderFuture.Get() as ProcessCameraProvider;
 
+                    // ResolutionSelector
+                    var resolutionSelector = new ResolutionSelector.Builder().
+                        SetAspectRatioStrategy(AspectRatioStrategy.Ratio43FallbackAutoStrategy)
+                        .Build();
+
                     // Set up the view finder use case to display camera preview
                     var preview = new Preview.Builder()
-                        .SetTargetAspectRatio(AspectRatio.Ratio43)
+                        .SetResolutionSelector(resolutionSelector)
                         .SetTargetRotation((int)viewFinder.Display.Rotation)
                         .Build();
 
                     // Set up the image analysis use case which will process frames in real time
                     var imageAnalysis = new ImageAnalysis.Builder()
-                        .SetTargetAspectRatio(AspectRatio.Ratio43)
+                        .SetResolutionSelector(resolutionSelector)
                         .SetTargetRotation((int)viewFinder.Display.Rotation)
                         .SetBackpressureStrategy(ImageAnalysis.StrategyKeepOnlyLatest)
                         .SetOutputImageFormat(ImageAnalysis.OutputImageFormatRgba8888)
