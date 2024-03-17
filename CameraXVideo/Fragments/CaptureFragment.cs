@@ -13,7 +13,6 @@ using Android.Content;
 using Android.Content.Res;
 using Android.Media;
 using Android.Provider;
-using Android.Runtime;
 using Android.Util;
 using Android.Views;
 using AndroidX.Camera.Core;
@@ -664,21 +663,7 @@ namespace CameraXVideo
             }
         }
 
-        static IntPtr class_ref = JNIEnv.FindClass("kotlinx/coroutines/BuildersKt");
-        static IntPtr id_launch;
-        public static Object Launch(this ICoroutineScope scope, Action action)
-        {
-            var context = EmptyCoroutineContext.Instance;
-            var start = CoroutineStart.Default;
-            var block = new Function2(action);
-
-            if (id_launch == IntPtr.Zero)
-                id_launch = JNIEnv.GetStaticMethodID(class_ref,
-                    "launch", "(Lkotlinx/coroutines/CoroutineScope;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/CoroutineStart;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;");
-
-            IntPtr obj = JNIEnv.CallStaticObjectMethod(class_ref, id_launch,
-                new JValue(scope), new JValue(context), new JValue(start), new JValue(block));
-            return Object.GetObject<Object>(obj, JniHandleOwnership.TransferLocalRef);
-        }
+        public static IJob Launch(this ICoroutineScope scope, Action action) =>
+            BuildersKt.Launch(scope, EmptyCoroutineContext.Instance, CoroutineStart.Default, new Function2(action));
     }
 }
