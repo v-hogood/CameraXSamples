@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using Android;
-using Android.App;
+﻿using Android;
 using Android.Content;
 using Android.Content.PM;
 using Android.Graphics;
@@ -10,14 +8,16 @@ using Android.Net;
 using Android.OS;
 using Android.Provider;
 using Android.Renderscripts;
-using Android.Runtime;
 using Android.Util;
 using Android.Views;
-using Android.Widget;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.App;
 using Google.Android.Material.Snackbar;
 using Java.Lang;
+using Math = System.Math;
+using Object = Java.Lang.Object;
+using String = Java.Lang.String;
+using Uri = Android.Net.Uri;
 
 namespace HdrViewfinder
 {
@@ -135,7 +135,9 @@ namespace HdrViewfinder
 
             mUiHandler = new Handler(Looper.MainLooper);
 
+#pragma warning disable CA1422
             mRS = RenderScript.Create(this);
+#pragma warning restore CA1422
 
             // When permissions are revoked the app is restarted so onCreate is sufficient to check for
             // permissions core to the Activity's functionality.

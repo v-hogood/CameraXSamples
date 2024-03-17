@@ -3,8 +3,10 @@ using Android.OS;
 using Android.Renderscripts;
 using Android.Util;
 using Android.Views;
-using Com.Example.Android.Hdrviewfinder;
+using Com.Android.Example.Hdrviewfinder;
 using Java.Lang;
+using Object = Java.Lang.Object;
+using Type = Android.Renderscripts.Type;
 
 namespace HdrViewfinder
 {
@@ -31,6 +33,7 @@ namespace HdrViewfinder
 
         public ViewfinderProcessor(RenderScript rs, Size dimensions)
         {
+#pragma warning disable CA1422
             Type.Builder yuvTypeBuilder = new Type.Builder(rs, Element.YUV(rs));
             yuvTypeBuilder.SetX(dimensions.Width);
             yuvTypeBuilder.SetY(dimensions.Height);
@@ -47,6 +50,7 @@ namespace HdrViewfinder
                 AllocationUsage.Script);
             mOutputAllocation = Allocation.CreateTyped(rs, rgbTypeBuilder.Create(),
                 AllocationUsage.IoOutput | AllocationUsage.Script);
+#pragma warning restore CA1422
 
             HandlerThread processingThread = new HandlerThread("ViewfinderProcessor");
             processingThread.Start();
@@ -62,6 +66,7 @@ namespace HdrViewfinder
             SetRenderMode(ModeNormal);
         }
 
+#pragma warning disable CA1422
         public Surface GetInputHdrSurface()
         {
             return mInputHdrAllocation.Surface;
@@ -76,6 +81,7 @@ namespace HdrViewfinder
         {
             mOutputAllocation.Surface = output;
         }
+#pragma warning restore CA1422
 
         public void SetRenderMode(int mode)
         {
@@ -101,7 +107,9 @@ namespace HdrViewfinder
             {
                 mParent = parent;
                 mInputAllocation = input;
+#pragma warning disable CA1422
                 mInputAllocation.SetOnBufferAvailableListener(this);
+#pragma warning restore CA1422
                 mCutPointX = cutPointX;
                 mCheckMerge = checkMerge;
             }
@@ -131,7 +139,9 @@ namespace HdrViewfinder
                 // Get to newest input
                 for (int i = 0; i < pendingFrames; i++)
                 {
+#pragma warning disable CA1422
                     mInputAllocation.IoReceive();
+#pragma warning restore CA1422
                 }
 
                 mParent.mHdrMergeScript.Set_gFrameCounter(mFrameCounter++);
@@ -148,7 +158,9 @@ namespace HdrViewfinder
 
                 // Run processing pass
                 mParent.mHdrMergeScript.ForEach_mergeHdrFrames(mParent.mPrevAllocation, mParent.mOutputAllocation);
+#pragma warning disable CA1422
                 mParent.mOutputAllocation.IoSend();
+#pragma warning restore CA1422
             }
         }
     }

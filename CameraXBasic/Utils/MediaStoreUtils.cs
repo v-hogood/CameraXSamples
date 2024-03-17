@@ -14,7 +14,9 @@ namespace CameraXBasic.Utils
 
             MediaStoreCollection =
                 Build.VERSION.SdkInt >= BuildVersionCodes.Q ?
+#pragma warning disable  CA1416
                     MediaStore.Images.Media.GetContentUri(MediaStore.VolumeExternal) :
+#pragma warning restore  CA1416
                     Uri.FromFile(context.GetExternalFilesDir(null));
         }
         Context context;

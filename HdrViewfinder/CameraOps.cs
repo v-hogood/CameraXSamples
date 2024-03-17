@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Android.Hardware.Camera2;
+﻿using Android.Hardware.Camera2;
 using Android.OS;
 using Android.Util;
 using Android.Views;
@@ -192,8 +191,10 @@ namespace HdrViewfinder
 
             try
             {
+#pragma warning disable CA1422
                 mCameraDevice.CreateCaptureSession(
                     mSurfaces, mCameraSessionListener, mCameraHandler);
+#pragma warning restore CA1422
             }
             catch (CameraAccessException e)
             {

@@ -517,6 +517,7 @@ namespace CameraXBasic.Fragments
                         .Format(JavaSystem.CurrentTimeMillis());
                     var contentValues = new ContentValues();
 #pragma warning disable 0618
+#pragma warning disable CA1416
                     contentValues.Put(MediaStore.MediaColumns.DisplayName, name);
                     contentValues.Put(MediaStore.MediaColumns.MimeType, PhotoType);
                     if (Build.VERSION.SdkInt > BuildVersionCodes.P)
@@ -524,6 +525,7 @@ namespace CameraXBasic.Fragments
                         var appName = RequireContext().Resources.GetString(Resource.String.app_name);
                         contentValues.Put(MediaStore.MediaColumns.RelativePath, "Pictures/" + appName);
                     }
+#pragma warning restore CA1416
 #pragma warning restore 0618
 
                     // Create output options object which contains file + metadata

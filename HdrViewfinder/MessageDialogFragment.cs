@@ -1,6 +1,4 @@
-﻿using Android.App;
-using Android.Content;
-using Android.OS;
+﻿using Android.Content;
 using AndroidX.AppCompat.App;
 using AlertDialog = Android.App.AlertDialog;
 

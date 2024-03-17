@@ -96,9 +96,11 @@ namespace CameraXBasic.Utils
                     SystemUiFlags.ImmersiveSticky |
                     SystemUiFlags.LayoutHideNavigation |
                     SystemUiFlags.HideNavigation;
+#pragma warning disable 618
 #pragma warning disable CA1422
                 window.DecorView.SystemUiVisibility = (StatusBarVisibility)fullscreenFlags;
 #pragma warning restore CA1422
+#pragma warning restore 618
             }
         }
     }
