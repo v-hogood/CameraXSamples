@@ -2,4 +2,3 @@ bin
 obj
 .vs
 *.user
-*.tflite
