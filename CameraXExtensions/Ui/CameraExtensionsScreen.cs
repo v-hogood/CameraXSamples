@@ -97,7 +97,9 @@ namespace CameraXExtensions
         private SnapHelper snapHelper = new CenterItemSnapHelper();
         private int snapPosition = RecyclerView.NoPosition;
 
+#pragma warning disable CS0618
         public GestureDetectorCompat gestureDetector;
+#pragma warning restore CS0618
         public ScaleGestureDetector scaleGestureDetector;
 
         public override void OnScrollStateChanged(RecyclerView recyclerView, int newState)
@@ -169,7 +171,9 @@ namespace CameraXExtensions
 
             permissionsRequestButton.SetOnClickListener(this);
 
+#pragma warning disable CS0618
             gestureDetector = new GestureDetectorCompat(context, new SimpleGestureListener(this));
+#pragma warning restore CS0618
 
             scaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureListener(this));
 

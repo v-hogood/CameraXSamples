@@ -47,7 +47,9 @@ namespace CameraXExtensions
         //
         private void MeasureChild(RecyclerView parent, View child)
         {
+#pragma warning disable CS0618
             if (ViewCompat.IsLaidOut(child)) return;
+#pragma warning restore CS0618
             var layoutManager = parent.GetLayoutManager() as LinearLayoutManager;
             if (layoutManager == null) return;
             var lp = child.LayoutParameters;

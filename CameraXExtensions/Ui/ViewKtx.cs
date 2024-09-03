@@ -17,7 +17,9 @@ namespace CameraXExtensions
         //
         public static void DoOnLaidOut(this View view, Action action)
         {
+#pragma warning disable CS0618
             if (view.IsAttachedToWindow && ViewCompat.IsLaidOut(view))
+#pragma warning restore CS0618
             {
                 action();
             }
