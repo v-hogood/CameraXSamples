@@ -1,3 +1,4 @@
+using Android.Graphics;
 using Android.Hardware.Camera2;
 using AndroidX.Camera.Core;
 using Exception = Java.Lang.Exception;
@@ -71,13 +72,39 @@ namespace CameraXExtensions
         sealed public class CaptureStarted : CaptureState { };
 
         //
+        // Capture postview is ready.
+        //
+        sealed public class CapturePostview : CaptureState
+        {
+            public CapturePostview(Bitmap bitmap) =>
+                Bitmap = bitmap;
+            public Bitmap Bitmap;
+        }
+
+        //
+        // Capture process progress updated with the [progress] value
+        //
+        sealed public class CaptureProcessProgress : CaptureState
+        {
+            public CaptureProcessProgress(int progress) =>
+                Progress = progress;
+            public int Progress;
+        }
+
+        //
         // Capture completed successfully.
         //
         sealed public class CaptureFinished : CaptureState
         {
-            public CaptureFinished(ImageCapture.OutputFileResults outputResults) =>
+            public CaptureFinished(
+                ImageCapture.OutputFileResults outputResults,
+                bool isProcessingSupported)
+            {
                 OutputResults = outputResults;
+                IsProcessingSupported = isProcessingSupported;
+            }
             public ImageCapture.OutputFileResults OutputResults;
+            public bool IsProcessingSupported;
         };
 
         //
@@ -87,7 +114,7 @@ namespace CameraXExtensions
         {
             public CaptureFailed(Exception exception) =>
                 this.exception = exception;
-            Exception exception;
+            public Exception exception;
         }
     }
 }

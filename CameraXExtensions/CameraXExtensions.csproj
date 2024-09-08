@@ -14,5 +14,6 @@
     <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.3.4.2" />
     <PackageReference Include="Xamarin.AndroidX.Camera.Extensions" Version="1.3.4.2" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.11.0.2" />
+    <PackageReference Include="Xamarin.Io.CoilKt.Coil" Version="1.4.0" />
   </ItemGroup>
 </Project>

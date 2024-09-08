@@ -12,6 +12,7 @@ namespace CameraXExtensions
         public sealed class SwitchCameraClick : CameraUiAction { };
         public sealed class ShutterButtonClick : CameraUiAction { };
         public sealed class ClosePhotoPreviewClick : CameraUiAction { };
+        public sealed class ProcessProgressComplete : CameraUiAction { };
         public sealed class SelectCameraExtension : CameraUiAction
             { public int Extension; };
         public sealed class Focus : CameraUiAction

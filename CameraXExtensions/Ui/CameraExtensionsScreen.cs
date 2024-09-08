@@ -1,5 +1,6 @@
 using Android.Animation;
 using Android.Content;
+using Android.Graphics;
 using Android.Util;
 using Android.Views;
 using AndroidX.Camera.View;
@@ -7,6 +8,7 @@ using AndroidX.Core.View;
 using AndroidX.DynamicAnimation;
 using AndroidX.Lifecycle;
 using AndroidX.RecyclerView.Widget;
+using Google.Android.Material.ProgressIndicator;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
 using static AndroidX.Core.View.ViewKt;
@@ -33,6 +35,7 @@ namespace CameraXExtensions
         private const float SpringStiffnessAlphaOut = 100f;
         private const float SpringStiffness = 800f;
         private const float SpringDampingRatio = 0.35f;
+        private const int MaxProgressAnimDurationMs = 3000;
 
         private View root;
         private Context context;
@@ -47,6 +50,9 @@ namespace CameraXExtensions
         private View permissionsRationaleContainer;
         private TextView permissionsRationale;
         private TextView permissionsRequestButton;
+        private ImageView photoPostview;
+        private View processProgressContainer;
+        private CircularProgressIndicator processProgressIndicator;
 
         public PreviewView PreviewView;
 
@@ -87,7 +93,16 @@ namespace CameraXExtensions
 
         public void OnAnimationEnd(Animator animation)
         {
-            switchLensButton.Animate().Rotation(0f);
+            if (animation == objectAnimator)
+            {
+                if ((int)objectAnimator.AnimatedValue == 100)
+                {
+                    GetLifecycleScope(FindViewTreeLifecycleOwner(root)).Launch(() =>
+                        action.Emit(new CameraUiAction.ProcessProgressComplete(), this));
+                }
+            }
+            else
+                switchLensButton.Animate().Rotation(0f);
         }
 
         public void OnAnimationRepeat(Animator animation) { }
@@ -151,6 +166,11 @@ namespace CameraXExtensions
             permissionsRationale = root.FindViewById<TextView>(Resource.Id.permissionsRationale);
             permissionsRequestButton =
                 root.FindViewById<TextView>(Resource.Id.permissionsRequestButton);
+            photoPostview = root.FindViewById<ImageView>(Resource.Id.photoPostview);
+            processProgressContainer =
+                root.FindViewById<View>(Resource.Id.processProgressContainer);
+            processProgressIndicator =
+                root.FindViewById<CircularProgressIndicator>(Resource.Id.processProgressIndicator);
 
             PreviewView = root.FindViewById<PreviewView>(Resource.Id.previewView);
 
@@ -260,11 +280,43 @@ namespace CameraXExtensions
             }
         }
 
+        private void ShowPostview(Bitmap bitmap)
+        {
+            if (photoPostview.Visibility == ViewStates.Visible) return;
+            SetVisible(photoPostview, true);
+            photoPostview.Load(bitmap, true, 200);
+        }
+
+        private void HidePostview()
+        {
+            SetVisible(photoPostview, false);
+        }
+
+        private ObjectAnimator objectAnimator = null;
+        private void ShowProcessProgressIndicator(int progress)
+        {
+            SetVisible(processProgressContainer, true);
+            if (progress == processProgressIndicator.Progress) return;
+
+            objectAnimator = ObjectAnimator.OfInt(processProgressIndicator, "progress", new int[] { progress });
+            var currentProgress = processProgressIndicator.Progress;
+            var progressStep = Math.Max(0, progress - currentProgress);
+            objectAnimator.SetDuration((long)(progressStep / 100f * MaxProgressAnimDurationMs));
+            objectAnimator.AddListener(this);
+            objectAnimator.Start();
+        }
+
+        private void HideProcessProgressIndicator()
+        {
+            SetVisible(processProgressContainer, false);
+            processProgressIndicator.Progress = 0;
+        }
+
         public void ShowPhoto(Uri uri)
         {
             if (uri == null) return;
             SetVisible(photoPreview, true);
-            // photoPreview.Load(uri);
+            photoPreview.Load(uri, true, 200);
             SetVisible(closePhotoPreview, true);
         }
 
@@ -284,6 +336,24 @@ namespace CameraXExtensions
 
             SetVisible(extensionSelector, state.extensionsSelectorViewState.isVisible);
             extensionsAdapter.SubmitList(state.extensionsSelectorViewState.extensions);
+
+            if (state.postviewViewState.isVisible)
+            {
+                ShowPostview(state.postviewViewState.bitmap!);
+            }
+            else
+            {
+                HidePostview();
+            }
+
+            if (state.processProgressViewState.isVisible)
+            {
+                ShowProcessProgressIndicator(state.processProgressViewState.progress);
+            }
+            else
+            {
+                HideProcessProgressIndicator();
+            }
         }
 
         void OnItemClick(View view)

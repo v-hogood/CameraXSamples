@@ -1,4 +1,5 @@
 using Android.Content;
+using Android.Graphics;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Extensions;
@@ -10,6 +11,7 @@ using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
+using static AndroidX.Camera.Core.ImageCapture;
 using static AndroidX.Core.Net.UriKt;
 using static AndroidX.Lifecycle.ViewModelKt;
 using static Xamarin.KotlinX.Coroutines.ExecutorsKt;
@@ -165,6 +167,21 @@ namespace CameraXExtensions
                     CameraLensToSelector(currentCameraUiState.CameraLens),
                     currentCameraUiState.ExtensionMode);
 
+            cameraProvider.UnbindAll();
+            camera = cameraProvider.BindToLifecycle(lifecycleOwner, cameraSelector);
+
+            if (camera?.CameraInfo != null)
+            {
+                var isPostviewSupported =
+                    ImageCapture.ImageCaptureCapabilities(camera.CameraInfo).IsPostviewSupported;
+#pragma warning disable CS0618
+                imageCapture = new ImageCapture.Builder()
+                    .SetTargetAspectRatio(AspectRatio.Ratio169)
+#pragma warning restore CS0618
+                    .SetPostviewEnabled(isPostviewSupported)
+                    .Build();
+            }
+
             var useCaseGroup = new UseCaseGroup.Builder()
                 .SetViewPort(previewView.ViewPort)
                 .AddUseCase(imageCapture)
@@ -250,6 +267,17 @@ namespace CameraXExtensions
                 .SetMetadata(metadata)
                 .Build();
 
+            if (camera?.CameraInfo != null)
+            {
+                if (ImageCapture.ImageCaptureCapabilities(camera.CameraInfo).IsCaptureProcessProgressSupported)
+                {
+                    GetViewModelScope(this).Launch(() =>
+                    {
+                        captureUiState.Emit(new CaptureState.CaptureProcessProgress(0), this);
+                    });
+                }
+            }
+
             imageCapture.TakePicture(
                 outputFileOptions,
                 AsExecutor(Dispatchers.Default),
@@ -262,14 +290,39 @@ namespace CameraXExtensions
                 application,
                 outputFileResults.SavedUri ?? ToUri(photoFile)
             );
+            var isProcessProgressSupported = false;
+            if (camera?.CameraInfo != null)
+                isProcessProgressSupported =
+                    ImageCapture.ImageCaptureCapabilities(camera.CameraInfo).IsCaptureProcessProgressSupported;
             GetViewModelScope(this).Launch(() =>
-                captureUiState.Emit(new CaptureState.CaptureFinished(outputFileResults), this));
+            {
+                if (isProcessProgressSupported)
+                {
+                    captureUiState.Emit(new CaptureState.CaptureProcessProgress(100), this);
+                }
+                captureUiState.Emit(
+                    new CaptureState.CaptureFinished(
+                        outputFileResults,
+                        isProcessProgressSupported), this);
+            });
         }
 
         public void OnError(ImageCaptureException exception)
         {
             GetViewModelScope(this).Launch(() =>
                 captureUiState.Emit(new CaptureState.CaptureFailed(exception), this));
+        }
+
+        public void OnCaptureProcessProgressed(int progress)
+        {
+            GetViewModelScope(this).Launch(() =>
+                captureUiState.Emit(new CaptureState.CaptureProcessProgress(progress), this));
+        }
+
+        public void OnPostviewBitmapAvailable(Bitmap bitmap)
+        {
+            GetViewModelScope(this).Launch(() =>
+                captureUiState.Emit(new CaptureState.CapturePostview(bitmap), this));
         }
 
         //

@@ -1,3 +1,4 @@
+using Android.Graphics;
 using static CameraXExtensions.CameraPreviewScreenViewState;
 
 namespace System.Runtime.CompilerServices
@@ -14,53 +15,72 @@ namespace CameraXExtensions
     public record CameraPreviewScreenViewState(
         ShutterButtonViewState shutterButtonViewState,
         SwitchLensButtonViewState switchLensButtonViewState,
-        CameraExtensionSelectorViewState extensionsSelectorViewState)
+        CameraExtensionSelectorViewState extensionsSelectorViewState,
+        ProcessProgressIndicatorViewState processProgressViewState,
+        PostviewViewState postviewViewState)
     {
         public CameraPreviewScreenViewState() :
-            this(new ShutterButtonViewState(), new SwitchLensButtonViewState(), new CameraExtensionSelectorViewState())
+            this(new ShutterButtonViewState(), new SwitchLensButtonViewState(), new CameraExtensionSelectorViewState(),
+                 new ProcessProgressIndicatorViewState(), new PostviewViewState())
         { }
 
-        public CameraPreviewScreenViewState HideCameraControls()
-        {
-            return this with
+        public CameraPreviewScreenViewState HideCameraControls() =>
+            this with
             {
                 shutterButtonViewState = this.shutterButtonViewState with { isVisible = false },
                 switchLensButtonViewState = this.switchLensButtonViewState with { isVisible = false },
                 extensionsSelectorViewState = this.extensionsSelectorViewState with { isVisible = false }
             };
-        }
 
-        public CameraPreviewScreenViewState ShowCameraControls()
-        {
-            return this with
+        public CameraPreviewScreenViewState ShowCameraControls() =>
+            this with
             {
                 shutterButtonViewState = this.shutterButtonViewState with { isVisible = true },
                 switchLensButtonViewState = this.switchLensButtonViewState with { isVisible = true },
                 extensionsSelectorViewState = this.extensionsSelectorViewState with { isVisible = true }
             };
-        }
 
-        public CameraPreviewScreenViewState EnableCameraShutter(bool isEnabled)
-        {
-            return this with
+        public CameraPreviewScreenViewState EnableCameraShutter(bool isEnabled) =>
+            this with
             {
                 shutterButtonViewState = this.shutterButtonViewState with { isEnabled = isEnabled }
             };
-        }
 
-        public CameraPreviewScreenViewState EnableSwitchLens(bool isEnabled)
-        {
-            return this with
+        public CameraPreviewScreenViewState EnableSwitchLens(bool isEnabled) =>
+            this with
             {
                 switchLensButtonViewState = this.switchLensButtonViewState with { isEnabled = isEnabled }
             };
-        }
 
-        public CameraPreviewScreenViewState SetAvailableExtensions(List<CameraExtensionItem> extensions)
+        public CameraPreviewScreenViewState SetAvailableExtensions(List<CameraExtensionItem> extensions) =>
+            this with
+            {
+                extensionsSelectorViewState = this.extensionsSelectorViewState with { extensions = extensions }
+            };
+
+        public CameraPreviewScreenViewState ShowPostview(Bitmap bitmap) =>
+            this with
+            {
+                postviewViewState = this.postviewViewState with { isVisible = true, bitmap = bitmap },
+            };
+
+        public CameraPreviewScreenViewState HidePostview() =>
+            this with
+            {
+                postviewViewState = new PostviewViewState()
+            };
+
+        public CameraPreviewScreenViewState ShowProcessProgressViewState(int progress) =>
+            this with
+            {
+                processProgressViewState = new ProcessProgressIndicatorViewState(isVisible: true, progress: progress)
+            };
+
+        public CameraPreviewScreenViewState HideProcessProgressViewState()
         {
             return this with
             {
-                extensionsSelectorViewState = this.extensionsSelectorViewState with { extensions = extensions }
+                processProgressViewState = new ProcessProgressIndicatorViewState()
             };
         }
 
@@ -81,6 +101,16 @@ namespace CameraXExtensions
         public record SwitchLensButtonViewState(
             bool isVisible = false,
             bool isEnabled = false
+        );
+
+        public record ProcessProgressIndicatorViewState(
+            bool isVisible = false,
+            int progress = 0
+        );
+
+        public record PostviewViewState(
+            bool isVisible = false,
+            Bitmap bitmap = null
         );
     }
 }

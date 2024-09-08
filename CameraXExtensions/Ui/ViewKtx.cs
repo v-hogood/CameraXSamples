@@ -2,6 +2,8 @@ using Android.Views;
 using AndroidX.Core.View;
 using Kotlin.Coroutines;
 using Kotlin.Jvm.Functions;
+using Xamarin.Coil;
+using Xamarin.Coil.Request;
 using Xamarin.KotlinX.Coroutines;
 using Object = Java.Lang.Object;
 
@@ -60,5 +62,21 @@ namespace CameraXExtensions
 
         public static IJob Launch(this ICoroutineScope scope, Action action) =>
             BuildersKt.Launch(scope, EmptyCoroutineContext.Instance, CoroutineStart.Default, new Function2(action));
+    }
+
+    public static class ImageLoaders
+    {
+        public static void Load(this ImageView imageView, Object data,
+            bool enable = true, int durationMillis = Xamarin.Coil.Drawable.CrossfadeDrawable.DefaultDuration)
+        {
+            var imageLoader = ImageLoader.Create(imageView.Context);
+            var request = new ImageRequest.Builder(imageView.Context)
+                .Target(imageView)
+                .Data(data)
+                .Crossfade(enable)
+                .Crossfade(durationMillis)
+                .Build();
+            imageLoader.Enqueue(request);
+        }
     }
 }

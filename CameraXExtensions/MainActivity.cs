@@ -18,6 +18,7 @@ using static Xamarin.KotlinX.Coroutines.Flow.FlowKt;
 using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
 using Boolean = Java.Lang.Boolean;
 using Object = Java.Lang.Object;
+using Uri = Android.Net.Uri;
 
 //
 // Displays the camera preview with camera controls and available extensions. Tapping on the shutter
@@ -73,6 +74,37 @@ namespace CameraXExtensions
         private IMutableStateFlow permissionState = MutableStateFlow(new PermissionState());
 
         ActivityResultLauncher requestPermissionsLauncher;
+
+        private Uri captureUri = null;
+        private bool progressComplete = false;
+
+        private void ShowCapture()
+        {
+            if (captureUri == null || !progressComplete) return;
+
+            cameraExtensionsViewModel.StopPreview();
+            captureScreenViewState.Emit(
+                (captureScreenViewState.Value as CaptureScreenViewState)
+                .UpdatePostCaptureScreen(() =>
+                {
+                    if (captureUri != null)
+                    {
+                        return new PostCaptureScreenViewState.VisibleViewState()
+                        { uri = captureUri };
+                    }
+                    else
+                    {
+                        return new PostCaptureScreenViewState.HiddenViewState();
+                    }
+                })
+                .UpdateCameraScreen((it) =>
+                    it.HideCameraControls()
+                      .HideProcessProgressViewState()
+                ), this);
+
+            captureUri = null;
+            progressComplete = false;
+        }
 
         public void OnActivityResult(Object result)
         {
@@ -176,6 +208,11 @@ namespace CameraXExtensions
                         Manifest.Permission.Camera
                     );
                 }
+                else if (action is CameraUiAction.ProcessProgressComplete)
+                {
+                    progressComplete = true;
+                    ShowCapture();
+                }
                 else if (action is CameraUiAction.Focus)
                 {
                     cameraExtensionsViewModel.Focus(
@@ -199,10 +236,13 @@ namespace CameraXExtensions
                         .UpdateCameraScreen((it) =>
                             it.EnableCameraShutter(true)
                                 .EnableSwitchLens(true)
+                                .HidePostview()
                         ), this);
                 }
                 else if (state is CaptureState.CaptureReady)
                 {
+                    captureUri = null;
+                    progressComplete = false;
                     captureScreenViewState.Emit(
                         (captureScreenViewState.Value as CaptureScreenViewState)
                         .UpdateCameraScreen((it) =>
@@ -221,25 +261,12 @@ namespace CameraXExtensions
                 }
                 else if (state is CaptureState.CaptureFinished)
                 {
-                    cameraExtensionsViewModel.StopPreview();
-                    captureScreenViewState.Emit(
-                        (captureScreenViewState.Value as CaptureScreenViewState)
-                        .UpdatePostCaptureScreen(() =>
-                        {
-                            var uri = (state as CaptureState.CaptureFinished).OutputResults.SavedUri;
-                            if (uri != null)
-                            {
-                                return new PostCaptureScreenViewState.VisibleViewState()
-                                { uri = uri };
-                            }
-                            else
-                            {
-                                return new PostCaptureScreenViewState.HiddenViewState();
-                            }
-                        })
-                        .UpdateCameraScreen((it) =>
-                            it.HideCameraControls()
-                        ), this);          
+                    captureUri = (state as CaptureState.CaptureFinished).OutputResults.SavedUri;
+                    if (!(state as CaptureState.CaptureFinished).IsProcessingSupported)
+                    {
+                        progressComplete = true;
+                    }
+                    ShowCapture();
                 }
                 else if (state is CaptureState.CaptureFailed)
                 {
@@ -253,6 +280,24 @@ namespace CameraXExtensions
                             it.ShowCameraControls()
                                 .EnableCameraShutter(true)
                                 .EnableSwitchLens(true)
+                                .HideProcessProgressViewState()
+                                .HidePostview()
+                       ), this);
+                }
+                else if (state is CaptureState.CapturePostview)
+                {
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((it) =>
+                            it.ShowPostview((state as CaptureState.CapturePostview).Bitmap)
+                        ), this);
+                }
+                else if (state is CaptureState.CaptureProcessProgress)
+                {
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((it) =>
+                            it.ShowProcessProgressViewState((state as CaptureState.CaptureProcessProgress).Progress)
                         ), this);
                 }
             }
@@ -282,6 +327,7 @@ namespace CameraXExtensions
                             new PostCaptureScreenViewState.HiddenViewState())
                         .UpdateCameraScreen((it) =>
                             it.ShowCameraControls()
+                                .HidePostview()
                                 .EnableCameraShutter(false)
                                 .EnableSwitchLens(false)
                         ), this);
@@ -335,7 +381,8 @@ namespace CameraXExtensions
             captureScreenViewState.Emit(
                 (captureScreenViewState.Value as CaptureScreenViewState)
                 .UpdateCameraScreen((state) =>
-                    state.ShowCameraControls())
+                    state.ShowCameraControls()
+                         .HidePostview())
                 .UpdatePostCaptureScreen(() =>
                     new PostCaptureScreenViewState.HiddenViewState()),
                 this
