@@ -331,7 +331,7 @@ namespace CameraXBasic.Fragments
                     (ILifecycleOwner) this, cameraSelector, preview, imageCapture, imageAnalyzer);
 
                 // Attach the viewfinder's surface provider to preview use case
-                preview?.SetSurfaceProvider(viewFinder.SurfaceProvider);
+                preview.SurfaceProvider = viewFinder.SurfaceProvider;
                 ObserveCameraState(camera?.CameraInfo);
             }
             catch (Exception exc)

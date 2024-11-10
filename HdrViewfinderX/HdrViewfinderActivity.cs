@@ -404,7 +404,7 @@ namespace HdrViewfinder
                         // Found suitable camera - get info, open, and set up outputs
                         mCameraInfo = camera.CameraInfo;
                         mCameraControl = camera.CameraControl;
-                        preview.SetSurfaceProvider(this);
+                        preview.SurfaceProvider = this;
                         foundCamera = true;
                     }
                     if (!foundCamera)

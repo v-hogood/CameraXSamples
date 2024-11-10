@@ -166,7 +166,7 @@ namespace CameraXTfLite
                         this as ILifecycleOwner, cameraSelector, preview, imageAnalysis);
 
                     // Use the camera object to link our preview use case with the view
-                    preview.SetSurfaceProvider(viewFinder.SurfaceProvider);
+                    preview.SurfaceProvider = viewFinder.SurfaceProvider;
 
                 }), ContextCompat.GetMainExecutor(this));
             });

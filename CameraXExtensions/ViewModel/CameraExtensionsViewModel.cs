@@ -173,7 +173,7 @@ namespace CameraXExtensions
             if (camera?.CameraInfo != null)
             {
                 var isPostviewSupported =
-                    ImageCapture.ImageCaptureCapabilities(camera.CameraInfo).IsPostviewSupported;
+                    ImageCapture.GetImageCaptureCapabilities(camera.CameraInfo).IsPostviewSupported;
 #pragma warning disable CS0618
                 imageCapture = new ImageCapture.Builder()
                     .SetTargetAspectRatio(AspectRatio.Ratio169)
@@ -193,7 +193,7 @@ namespace CameraXExtensions
                 cameraSelector,
                 useCaseGroup
             );
-            preview.SetSurfaceProvider(previewView.SurfaceProvider);
+            preview.SurfaceProvider = previewView.SurfaceProvider;
 
             GetViewModelScope(this).Launch(() =>
             {
@@ -209,7 +209,7 @@ namespace CameraXExtensions
         //
         public void StopPreview()
         {
-            preview.SetSurfaceProvider(null);
+            preview.SurfaceProvider = null;
             GetViewModelScope(this).Launch(() =>
                 cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.PreviewStopped }, this));
         }
@@ -269,7 +269,7 @@ namespace CameraXExtensions
 
             if (camera?.CameraInfo != null)
             {
-                if (ImageCapture.ImageCaptureCapabilities(camera.CameraInfo).IsCaptureProcessProgressSupported)
+                if (ImageCapture.GetImageCaptureCapabilities(camera.CameraInfo).IsCaptureProcessProgressSupported)
                 {
                     GetViewModelScope(this).Launch(() =>
                     {
@@ -293,7 +293,7 @@ namespace CameraXExtensions
             var isProcessProgressSupported = false;
             if (camera?.CameraInfo != null)
                 isProcessProgressSupported =
-                    ImageCapture.ImageCaptureCapabilities(camera.CameraInfo).IsCaptureProcessProgressSupported;
+                    ImageCapture.GetImageCaptureCapabilities(camera.CameraInfo).IsCaptureProcessProgressSupported;
             GetViewModelScope(this).Launch(() =>
             {
                 if (isProcessProgressSupported)

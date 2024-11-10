@@ -117,7 +117,7 @@ namespace CameraXVideo
                     .SetResolutionSelector(resolutionSelector)
                     .Build();
 
-                preview.SetSurfaceProvider(previewView.SurfaceProvider);
+                preview.SurfaceProvider = previewView.SurfaceProvider;
 
                 // build a recorder, which can:
                 //   - record video/audio to MediaStore(only shown here), File, ParcelFileDescriptor
