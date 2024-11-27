@@ -11,6 +11,7 @@ API in Android.
 | [CameraXBasic](CameraXBasic)              | Demonstrates how to use CameraX APIs. |
 | [CameraXTfLite](CameraXTfLite)            | Demonstrates how to use CameraX APIs with TFLite |
 | [CameraXVideo](CameraXVideo)              | Demonstrates how to use CameraX VideoCapture API. |
+| [CameraXMlKit](CameraXMlKit)              | Demonstrates how to use CameraX's MlKitAnalyzer to build a QR-code scanner. |
 | [CameraXExtensions](CameraXExtensions)    | Demonstrates CameraX extension live preview and still capture.
 | [HdrViewfinder](HdrViewfinder)            | Demonstrates use of RenderScript to display a live HDR feed from camera frames using Camera2 API. |
 | [HdrViewfinderX](HdrViewfinderX)          | Demonstrates how to display a live HDR feed from camera frames using CameraX API. |
