@@ -10,8 +10,8 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.4.0.1" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.4.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.4.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.4.0.2" />
     <PackageReference Include="Xamarin.AndroidX.Legacy.Support.Core.UI" Version="1.0.0.31" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.12.0.1" />
   </ItemGroup>

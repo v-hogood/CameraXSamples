@@ -1,10 +1,13 @@
 using Android;
 using Android.Content.PM;
+using Android.Runtime;
 using AndroidX.AppCompat.App;
+using AndroidX.Camera.MLKit.Vision;
 using AndroidX.Camera.View;
 using AndroidX.Core.App;
 using AndroidX.Core.Content;
 using AndroidX.Core.Util;
+using Java.Util;
 using Java.Util.Concurrent;
 using Xamarin.Google.MLKit.Vision.Barcode.Common;
 using Xamarin.Google.MLKit.Vision.BarCode;
@@ -44,17 +47,18 @@ namespace CameraXMlKit
         public void Accept(Object t)
         {
             var result = t as MlKitAnalyzer.Result;
-            Barcode[] barcodeResults = result?.GetValue(barcodeScanner);
-            if ((barcodeResults == null) ||
-                (barcodeResults.Length == 0) ||
-                (barcodeResults.First() == null))
+            var value = result?.GetValue(barcodeScanner);
+            var barcodeResults = value.JavaCast<ArrayList>();
+            if (barcodeResults == null ||
+                barcodeResults.Size() == 0 ||
+                barcodeResults.Get(0) == null)
             {
                 previewView.Overlay.Clear();
-                previewView.SetOnTouchListener(null); //no-op
+                previewView.SetOnTouchListener(null); // no-op
                 return;
             }
 
-            var qrCodeViewModel = new QrCodeViewModel(barcodeResults[0]);
+            var qrCodeViewModel = new QrCodeViewModel(barcodeResults.Get(0) as Barcode);
             var qrCodeDrawable = new QrCodeDrawable(qrCodeViewModel);
 
             previewView.SetOnTouchListener(qrCodeViewModel.QrCodeTouchCallback);
@@ -76,7 +80,9 @@ namespace CameraXMlKit
                 ContextCompat.GetMainExecutor(this),
                 new MlKitAnalyzer(
                     new List<IDetector> { barcodeScanner },
+#pragma warning disable CS0618
                     CameraController.CoordinateSystemViewReferenced,
+#pragma warning restore CS0618
                     ContextCompat.GetMainExecutor(this),
                     this
                 )
