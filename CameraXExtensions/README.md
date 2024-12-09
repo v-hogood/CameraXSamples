@@ -17,7 +17,7 @@ This sample displays the available list of camera extensions for the selected ca
 lens. Selecting an extensions allows the user to capture a still using that
 extension.
 
-[1]: https://developer.android.com/training/camerax/vendor-extensions
+[1]: https://source.android.com/docs/core/camera/camerax-vendor-extensions
 
 Pre-requisites
 --------------
