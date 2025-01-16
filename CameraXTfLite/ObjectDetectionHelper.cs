@@ -1,6 +1,6 @@
 using Android.Graphics;
-using TensorFlow.Lite.Support.Image;
 using Xamarin.TensorFlow.Lite;
+using Xamarin.TensorFlow.Lite.Support.Image;
 using Integer = Java.Lang.Integer;
 using Object = Java.Lang.Object;
 

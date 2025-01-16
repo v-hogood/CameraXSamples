@@ -13,8 +13,8 @@
   <ItemGroup>
     <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.4.0.2" />
     <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.4.0.2" />
+    <PackageReference Include="Xamarin.Google.AI.Edge.LiteRT.Support" Version="1.0.1" />
+    <PackageReference Include="Xamarin.Google.AI.Edge.LiteRT.Metadata" Version="1.0.1" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.12.0.1" />
-    <PackageReference Include="TensorFlow.Lite.Support" Version="0.4.4" />
-    <PackageReference Include="TensorFlow.Lite.Metadata" Version="0.4.4" />
   </ItemGroup>
 </Project>
