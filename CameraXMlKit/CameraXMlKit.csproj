@@ -10,8 +10,8 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.4.0.2" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.MLKit.Vision" Version="1.4.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.4.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.MLKit.Vision" Version="1.4.1" />
     <PackageReference Include="Xamarin.Google.Android.Material" Version="1.12.0.1" />
     <PackageReference Include="Xamarin.Google.MlKit.BarcodeScanning" Version="117.3.0.1" />
   </ItemGroup>
