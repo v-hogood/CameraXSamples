@@ -17,11 +17,12 @@ namespace CameraXExtensions
         SwitchLensButtonViewState switchLensButtonViewState,
         CameraExtensionSelectorViewState extensionsSelectorViewState,
         ProcessProgressIndicatorViewState processProgressViewState,
-        PostviewViewState postviewViewState)
+        PostviewViewState postviewViewState,
+        LatencyEstimateIndicatorViewState latencyEstimateIndicatorViewState)
     {
         public CameraPreviewScreenViewState() :
             this(new ShutterButtonViewState(), new SwitchLensButtonViewState(), new CameraExtensionSelectorViewState(),
-                 new ProcessProgressIndicatorViewState(), new PostviewViewState())
+                 new ProcessProgressIndicatorViewState(), new PostviewViewState(), new LatencyEstimateIndicatorViewState())
         { }
 
         public CameraPreviewScreenViewState HideCameraControls() =>
@@ -76,13 +77,31 @@ namespace CameraXExtensions
                 processProgressViewState = new ProcessProgressIndicatorViewState(isVisible: true, progress: progress)
             };
 
-        public CameraPreviewScreenViewState HideProcessProgressViewState()
-        {
-            return this with
+        public CameraPreviewScreenViewState HideProcessProgressViewState() =>
+            this with
             {
                 processProgressViewState = new ProcessProgressIndicatorViewState()
             };
-        }
+
+        public CameraPreviewScreenViewState ShowLatencyEstimateIndicator(long latencyEstimateMillis) =>
+            this with
+            {
+                latencyEstimateIndicatorViewState = this.latencyEstimateIndicatorViewState with
+                {
+                    isVisible = true,
+                    latencyEstimateMillis = latencyEstimateMillis
+                }
+            };
+
+        public CameraPreviewScreenViewState HideLatencyEstimateIndicator() =>
+            this with
+            {
+                latencyEstimateIndicatorViewState = this.latencyEstimateIndicatorViewState with
+                {
+                    isVisible = false,
+                    latencyEstimateMillis = 0
+                }
+            };
 
         public record CameraExtensionSelectorViewState(
             bool isVisible,
@@ -111,6 +130,11 @@ namespace CameraXExtensions
         public record PostviewViewState(
             bool isVisible = false,
             Bitmap bitmap = null
+        );
+
+        public record LatencyEstimateIndicatorViewState(
+            bool isVisible = false,
+            long latencyEstimateMillis = 0
         );
     }
 }

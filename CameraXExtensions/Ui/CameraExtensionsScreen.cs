@@ -14,6 +14,7 @@ using Xamarin.KotlinX.Coroutines.Flow;
 using static AndroidX.Core.View.ViewKt;
 using static AndroidX.Lifecycle.LifecycleOwnerKt;
 using static Xamarin.KotlinX.Coroutines.Flow.StateFlowKt;
+using Math = Java.Lang.Math;
 using Object = Java.Lang.Object;
 using Uri = Android.Net.Uri;
 
@@ -53,6 +54,7 @@ namespace CameraXExtensions
         private ImageView photoPostview;
         private View processProgressContainer;
         private CircularProgressIndicator processProgressIndicator;
+        private TextView latencyEstimateIndicator;
 
         public PreviewView PreviewView;
 
@@ -171,6 +173,8 @@ namespace CameraXExtensions
                 root.FindViewById<View>(Resource.Id.processProgressContainer);
             processProgressIndicator =
                 root.FindViewById<CircularProgressIndicator>(Resource.Id.processProgressIndicator);
+            latencyEstimateIndicator =
+                root.FindViewById<TextView>(Resource.Id.latencyEstimateIndicator);
 
             PreviewView = root.FindViewById<PreviewView>(Resource.Id.previewView);
 
@@ -306,6 +310,68 @@ namespace CameraXExtensions
             objectAnimator.Start();
         }
 
+        private void ShowLatencyEstimate(long latencyEstimateMillis)
+        {
+            var estimateSeconds = Math.Round((float)latencyEstimateMillis / 1000);
+
+            if (latencyEstimateIndicator.Visibility != ViewStates.Visible)
+            {
+                var alphaAnimation =
+                    new SpringAnimation(latencyEstimateIndicator, DynamicAnimation.Alpha, 1f);
+                alphaAnimation.Spring.SetStiffness(SpringForce.StiffnessLow);
+                alphaAnimation.Spring.SetDampingRatio(SpringForce.DampingRatioNoBouncy);
+
+                var scaleAnimationX =
+                    new SpringAnimation(latencyEstimateIndicator, DynamicAnimation.ScaleX, 1f);
+                scaleAnimationX.Spring.SetStiffness(SpringForce.StiffnessLow);
+                scaleAnimationX.Spring.SetDampingRatio(SpringForce.DampingRatioLowBouncy);
+
+                var scaleAnimationY =
+                    new SpringAnimation(latencyEstimateIndicator, DynamicAnimation.ScaleY, 1f);
+                scaleAnimationY.Spring.SetStiffness(SpringForce.StiffnessLow);
+                scaleAnimationY.Spring.SetDampingRatio(SpringForce.DampingRatioLowBouncy);
+
+                latencyEstimateIndicator.Visibility = ViewStates.Visible;
+                latencyEstimateIndicator.Alpha = 0f;
+                latencyEstimateIndicator.ScaleX = 0.2f;
+                latencyEstimateIndicator.ScaleY = 0.2f;
+
+                alphaAnimation.Start();
+                scaleAnimationX.Start();
+                scaleAnimationY.Start();
+            }
+
+            latencyEstimateIndicator.Text =
+                context.GetString(Resource.String.latency_estimate, estimateSeconds);
+        }
+
+        private void HideLatencyEstimate()
+        {
+            if (latencyEstimateIndicator.Visibility == ViewStates.Visible)
+            {
+                var alphaAnimation =
+                    new SpringAnimation(latencyEstimateIndicator, DynamicAnimation.Alpha, 0f);
+                alphaAnimation.Spring.SetStiffness(SpringForce.StiffnessLow);
+                alphaAnimation.Spring.SetDampingRatio(SpringForce.DampingRatioNoBouncy);
+
+                alphaAnimation.AddEndListener(this);
+
+                var scaleAnimationX =
+                    new SpringAnimation(latencyEstimateIndicator, DynamicAnimation.ScaleX, 0f);
+                scaleAnimationX.Spring.SetStiffness(SpringForce.StiffnessLow);
+                scaleAnimationX.Spring.SetDampingRatio(SpringForce.DampingRatioLowBouncy);
+
+                var scaleAnimationY =
+                    new SpringAnimation(latencyEstimateIndicator, DynamicAnimation.ScaleY, 0f);
+                scaleAnimationY.Spring.SetStiffness(SpringForce.StiffnessLow);
+                scaleAnimationY.Spring.SetDampingRatio(SpringForce.DampingRatioLowBouncy);
+
+                alphaAnimation.Start();
+                scaleAnimationX.Start();
+                scaleAnimationY.Start();
+            }
+        }
+
         private void HideProcessProgressIndicator()
         {
             SetVisible(processProgressContainer, false);
@@ -354,6 +420,15 @@ namespace CameraXExtensions
             {
                 HideProcessProgressIndicator();
             }
+
+            if (state.latencyEstimateIndicatorViewState.isVisible)
+            {
+                ShowLatencyEstimate(state.latencyEstimateIndicatorViewState.latencyEstimateMillis);
+            }
+            else
+            {
+                HideLatencyEstimate();
+            }
         }
 
         void OnItemClick(View view)
@@ -376,6 +451,7 @@ namespace CameraXExtensions
             switchLensButton.Animate().Start();
         }
 
+        private SpringAnimation alphaAnimation;
         public void ShowFocusPoint(float x, float y)
         {
             View view = focusPointView;
@@ -387,7 +463,7 @@ namespace CameraXExtensions
             );
             drawable.SetStrokeWidth(strokeWidth);
 
-            var alphaAnimation = new SpringAnimation(view, DynamicAnimation.Alpha, 1f);
+            alphaAnimation = new SpringAnimation(view, DynamicAnimation.Alpha, 1f);
             alphaAnimation.Spring.SetStiffness(SpringStiffnessAlphaOut);
             alphaAnimation.Spring.SetDampingRatio(SpringDampingRatio);
 
@@ -416,10 +492,23 @@ namespace CameraXExtensions
 
         public void OnAnimationEnd(DynamicAnimation animation, bool canceled, float value, float velocity)
         {
-            var springForce = new SpringForce();
-            springForce.SetStiffness(SpringStiffnessAlphaOut);
-            springForce.SetDampingRatio(SpringForce.DampingRatioNoBouncy);
-            new SpringAnimation(focusPointView, DynamicAnimation.Alpha, 0f).Start();
+            if (animation == alphaAnimation)
+            {
+                var springForce = new SpringForce();
+                springForce.SetStiffness(SpringStiffnessAlphaOut);
+                springForce.SetDampingRatio(SpringForce.DampingRatioNoBouncy);
+                new SpringAnimation(focusPointView, DynamicAnimation.Alpha, 0f).Start();
+                if (!canceled)
+                {
+                    latencyEstimateIndicator.Visibility = ViewStates.Gone;
+                    latencyEstimateIndicator.Text = "";
+                }
+            }
+            else if (!canceled)
+            {
+                latencyEstimateIndicator.Visibility = ViewStates.Gone;
+                latencyEstimateIndicator.Text = "";
+            }
         }
     }
 }

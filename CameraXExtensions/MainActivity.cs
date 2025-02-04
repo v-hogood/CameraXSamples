@@ -1,9 +1,11 @@
 ﻿using Android;
 using Android.Content.PM;
+using Android.Util;
 using AndroidX.Activity;
 using AndroidX.Activity.Result;
 using AndroidX.Activity.Result.Contract;
 using AndroidX.AppCompat.App;
+using AndroidX.Camera.Core;
 using AndroidX.Camera.Extensions;
 using AndroidX.Core.App;
 using AndroidX.Lifecycle;
@@ -33,6 +35,9 @@ namespace CameraXExtensions
         IFunction2,
         IFunction3
     {
+        private const string Tag = "MainActivity";
+        private const int CaptureLatencyIndicatorThresholdMs = 500;
+
         public ICoroutineContext Context => GetLifecycleScope(this).CoroutineContext;
 
         public void ResumeWith(Object result) { }
@@ -335,6 +340,7 @@ namespace CameraXExtensions
                 }
                 else if (cameraUiState.CameraState == CameraState.Ready)
                 {
+                    Log.Debug(Tag, "Camera is ready");
                     cameraExtensionsScreen.PreviewView.DoOnLaidOut(() =>
                     {
                         cameraExtensionsViewModel.StartPreview(
@@ -356,6 +362,31 @@ namespace CameraXExtensions
                                 };
                             }).ToList())
                         ), this);
+                }
+                else if (cameraUiState.CameraState == CameraState.PreviewActive)
+                {
+                    Log.Debug(Tag, "Camera preview is active");
+                    captureScreenViewState.Emit(
+                        (captureScreenViewState.Value as CaptureScreenViewState)
+                        .UpdateCameraScreen((s) =>
+                        {
+                            var latencyEstimate = cameraUiState.RealtimeCaptureLatencyEstimate;
+                            if (latencyEstimate == ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency)
+                            {
+                                Log.Debug(Tag, "Camera preview is active: hide latency estimate indicator");
+                                return s.HideLatencyEstimateIndicator();
+                            }
+                            else if (latencyEstimate.CaptureLatencyMillis <= CaptureLatencyIndicatorThresholdMs)
+                            {
+                                Log.Debug(Tag, "Camera preview is active: hide latency estimate indicator (under {0} ms)", CaptureLatencyIndicatorThresholdMs);
+                                return s.HideLatencyEstimateIndicator();
+                            }
+                            else
+                            {
+                                Log.Debug(Tag, "Camera preview is active: show latency estimate indicator {0} ms", latencyEstimate.CaptureLatencyMillis);
+                                return s.ShowLatencyEstimateIndicator(latencyEstimate.CaptureLatencyMillis);
+                            }
+                        }), this);
                 }
                 else if (cameraUiState.CameraState == CameraState.PreviewStopped)
                 {

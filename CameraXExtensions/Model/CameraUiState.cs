@@ -27,6 +27,8 @@ namespace CameraXExtensions
         public List<int> AvailableCameraLens = new List<int>(new int[] { (int)LensFacing.Back });
         public int CameraLens = (int)LensFacing.Back;
         public int ExtensionMode = AndroidX.Camera.Extensions.ExtensionMode.None;
+        public ImageCaptureLatencyEstimate RealtimeCaptureLatencyEstimate =
+            ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency;
     }
 
     //
@@ -43,6 +45,12 @@ namespace CameraXExtensions
         // Camera is open and presenting a preview stream.
         //
         Ready,
+
+        //
+        // Camera is open and preview stream is currently running.
+        // Updates during this period are from camera state operations.
+        //
+        PreviewActive,
 
         //
         // Camera is initialized but the preview has been stopped.

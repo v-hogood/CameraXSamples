@@ -1,5 +1,6 @@
 using Android.Content;
 using Android.Graphics;
+using Android.Util;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Core.ResolutionSelector;
 using AndroidX.Camera.Extensions;
@@ -11,7 +12,6 @@ using Java.Lang;
 using Kotlin.Coroutines;
 using Xamarin.KotlinX.Coroutines;
 using Xamarin.KotlinX.Coroutines.Flow;
-using static AndroidX.Camera.Core.ImageCapture;
 using static AndroidX.Core.Net.UriKt;
 using static AndroidX.Lifecycle.ViewModelKt;
 using static Xamarin.KotlinX.Coroutines.ExecutorsKt;
@@ -49,6 +49,9 @@ namespace CameraXExtensions
         Application application;
         ImageCaptureRepository imageCaptureRepository;
 
+        private const string Tag = "CameraExtensionsViewModel";
+        private const long RealtimeLatencyUpdateIntervalMillis = 1000L;
+
         public ICoroutineContext Context => GetViewModelScope(this).CoroutineContext;
 
         public void ResumeWith(Object result) { }
@@ -66,6 +69,7 @@ namespace CameraXExtensions
         private ImageCapture imageCapture = new ImageCapture.Builder()
             .SetResolutionSelector(resolutionSelector)
             .Build();
+        private IJob realtimeLatencyEstimateJob;
 
         private Preview preview = new Preview.Builder()
             .SetResolutionSelector(resolutionSelector)
@@ -143,7 +147,8 @@ namespace CameraXExtensions
                             CameraState = CameraState.Ready,
                             AvailableExtensions = availableExtensions,
                             AvailableCameraLens = availableCameraLens,
-                            ExtensionMode = ExtensionMode.None
+                            ExtensionMode = availableExtensions.Count == 0 ? ExtensionMode.None : currentCameraUiState.ExtensionMode,
+                            RealtimeCaptureLatencyEstimate = ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency
                         };
                         cameraUiState.Emit(newCameraUiState, this);
                     }), ContextCompat.GetMainExecutor(context));
@@ -160,6 +165,8 @@ namespace CameraXExtensions
             ILifecycleOwner lifecycleOwner,
             PreviewView previewView)
         {
+            realtimeLatencyEstimateJob?.Cancel(null);
+
             var currentCameraUiState = cameraUiState.Value as CameraUiState;
             var cameraSelector = currentCameraUiState.ExtensionMode == ExtensionMode.None ?
                 CameraLensToSelector(currentCameraUiState.CameraLens) :
@@ -201,7 +208,50 @@ namespace CameraXExtensions
                     cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.Ready },
                         this);
                 captureUiState.Emit(new CaptureState.CaptureReady(), this);
+                var previewStreamState = previewView.PreviewStreamState.Value as PreviewView.StreamState;
+                if (previewStreamState == PreviewView.StreamState.Idle)
+                {
+                    realtimeLatencyEstimateJob?.Cancel(null);
+                    realtimeLatencyEstimateJob = null;
+                }
+                if (previewStreamState == PreviewView.StreamState.Streaming)
+                {
+                    if (realtimeLatencyEstimateJob == null)
+                    {
+                        realtimeLatencyEstimateJob =
+                            GetViewModelScope(this).Launch(() =>
+                                ObserveRealtimeLatencyEstimate());
+                    }
+                }
             });
+        }
+
+        private void ObserveRealtimeLatencyEstimate()
+        {
+            Log.Debug(Tag, "Starting realtime latency estimate job");
+
+            var currentCameraUiState = cameraUiState.Value as CameraUiState;
+            var isSupported =
+                currentCameraUiState.ExtensionMode != ExtensionMode.None &&
+                    imageCapture.RealtimeCaptureLatencyEstimate != ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency;
+
+            if (!isSupported)
+            {
+                Log.Debug(Tag, "Starting realtime latency estimate job: no extension mode or not supported");
+                cameraUiState.Emit(
+                    new CameraUiState((CameraUiState)cameraUiState.Value)
+                    {
+                        CameraState = CameraState.PreviewActive,
+                        RealtimeCaptureLatencyEstimate = ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency
+                    }, this);
+                    return;
+            }
+
+            while (CoroutineScopeKt.IsActive(GetViewModelScope(this)))
+            {
+                UpdateRealtimeCaptureLatencyEstimate();
+                DelayKt.Delay(RealtimeLatencyUpdateIntervalMillis, this);
+            }
         }
 
         //
@@ -209,9 +259,14 @@ namespace CameraXExtensions
         //
         public void StopPreview()
         {
+            realtimeLatencyEstimateJob?.Cancel(null);
             preview.SurfaceProvider = null;
             GetViewModelScope(this).Launch(() =>
-                cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value) { CameraState = CameraState.PreviewStopped }, this));
+                cameraUiState.Emit(new CameraUiState((CameraUiState)cameraUiState.Value)
+                {
+                    CameraState = CameraState.PreviewStopped,
+                    RealtimeCaptureLatencyEstimate = ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency
+                }, this));
         }
 
         //
@@ -219,8 +274,9 @@ namespace CameraXExtensions
         //
         public void SwitchCamera()
         {
+            realtimeLatencyEstimateJob?.Cancel(null);
             var currentCameraUiState = cameraUiState.Value as CameraUiState;
-            if (currentCameraUiState.CameraState == CameraState.Ready)
+            if (currentCameraUiState.CameraState == CameraState.Ready || currentCameraUiState.CameraState == CameraState.PreviewActive)
             {
                 // To switch the camera lens, there has to be at least 2 camera lenses
                 if (currentCameraUiState.AvailableCameraLens.Count == 1) return;
@@ -254,6 +310,7 @@ namespace CameraXExtensions
         //
         public void CapturePhoto()
         {
+            realtimeLatencyEstimateJob?.Cancel(null);
             GetViewModelScope(this).Launch(() =>
                 captureUiState.Emit(new CaptureState.CaptureStarted(), this));
             photoFile = imageCaptureRepository.CreateImageOutputFile();
@@ -336,7 +393,8 @@ namespace CameraXExtensions
                     new CameraUiState((CameraUiState)cameraUiState.Value)
                     {
                         CameraState = CameraState.NotReady,
-                        ExtensionMode = extensionMode
+                        ExtensionMode = extensionMode,
+                        RealtimeCaptureLatencyEstimate = ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency
                     }, this
                 );
                 captureUiState.Emit(new CaptureState.CaptureNotReady(), this);
@@ -367,5 +425,21 @@ namespace CameraXExtensions
                 CameraSelector.LensFacingBack => CameraSelector.DefaultBackCamera,
                 _ => throw new IllegalArgumentException("Invalid lens facing type: " + lensFacing)
             };
+
+        private void UpdateRealtimeCaptureLatencyEstimate()
+        {
+            var estimate = imageCapture.RealtimeCaptureLatencyEstimate;
+            Log.Debug(Tag, "Realtime capture latency estimate: " + estimate);
+            if (estimate == ImageCaptureLatencyEstimate.UndefinedImageCaptureLatency)
+            {
+                return;
+            }
+            cameraUiState.Emit(
+                new CameraUiState((CameraUiState)cameraUiState.Value)
+                {
+                    CameraState = CameraState.PreviewActive,
+                    RealtimeCaptureLatencyEstimate = estimate
+                }, this);
+        }
     }
 }
