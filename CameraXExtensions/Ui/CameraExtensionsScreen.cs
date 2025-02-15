@@ -143,7 +143,7 @@ namespace CameraXExtensions
         private void SelectItem(int position)
         {
             var data =
-                (extensionsAdapter.CurrentList as IList<CameraExtensionItem>).
+                extensionsAdapter.CurrentList.Cast<CameraExtensionItem>().
                     Select((cameraExtensionModel, index) =>
                     {
                         return new CameraExtensionItem(cameraExtensionModel) { Selected = position == index };
