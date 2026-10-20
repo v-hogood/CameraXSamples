@@ -11,12 +11,10 @@
     <AndroidStoreUncompressedFileExtensions>tflite</AndroidStoreUncompressedFileExtensions>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.5.3" />
-    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.5.3" />
-    <PackageReference Include="Xamarin.AndroidX.Compose.Runtime.Annotation" Version="1.10.3.1" />
-    <PackageReference Include="Xamarin.AndroidX.Compose.Runtime.Annotation.Jvm" Version="1.10.3" ExcludeAssets="all" />
-    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.13.0.1" />
-    <PackageReference Include="TensorFlow.Lite.Support" Version="0.4.4.1" />
-    <PackageReference Include="TensorFlow.Lite.Metadata" Version="0.4.4.1" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.6.2" />
+    <PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.6.2" />
+    <PackageReference Include="Xamarin.Google.Android.Material" Version="1.14.0.6" />
+    <PackageReference Include="TensorFlow.Lite.Support" Version="0.4.4.2" />
+    <PackageReference Include="TensorFlow.Lite.Metadata" Version="0.4.4.2" />
   </ItemGroup>
 </Project>
